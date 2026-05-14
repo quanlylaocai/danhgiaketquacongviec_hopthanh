@@ -1,41 +1,13 @@
 /* ========================================================================== */
-
 var ddungApi = "https://script.google.com/macros/s/AKfycbwx-SfK2k6Sgf2oLQCu1Jt55clwz0nuke8YUVv8QgttrmqxgcDti7c8WA8x8jzh5CHy/exec"; 
 
-window.khachApi = {
-    yeucauApi: function(hdong, tdtai, khiTcong, khiLoi) {
-        var dlieu = { hdong: hdong, ...tdtai };
-        fetch(ddungApi, {
-            method: 'POST',
-            headers: { 'Content-Type': 'text/plain;charset=utf-8' }, 
-            body: JSON.stringify(dlieu)
-        })
-        .then(function(ph) { return ph.json(); })
-        .then(function(kq) {
-            if (kq.ttai === 'loi') {
-                if (khiLoi) khiLoi(new Error(kq.tbao));
-            } else {
-                var dcuoi = (kq.dliu !== undefined) ? kq.dliu : kq;
-                if (khiTcong) khiTcong(dcuoi);
-            }
-        })
-        .catch(function(loie) { if (khiLoi) khiLoi(loie); });
-    },
-    layDlCanb: function(ttrang, taik, khiTcong, khiLoi) { this.yeucauApi("laydlcanb", { ttrang: ttrang, tkcanb: taik }, khiTcong, khiLoi); },
-    luuTam: function(dldeu, khiTcong, khiLoi) { this.yeucauApi("luutam", { dldeu: dldeu }, khiTcong, khiLoi); },
-    nopBcao: function(dl, khiTcong, khiLoi) { this.yeucauApi("nopbcao", { dldeu: dl }, khiTcong, khiLoi); },
-    layDlThop: function(khiTcong, khiLoi) { this.yeucauApi("laydlthop", {}, khiTcong, khiLoi); },
-    layDlNghi: function(khiTcong, khiLoi) { this.yeucauApi("laydlnghi", {}, khiTcong, khiLoi); },
-    layDlYkien: function(khiTcong, khiLoi) { this.yeucauApi("laydlykien", {}, khiTcong, khiLoi); },
-    layDlBcao: function(khiTcong, khiLoi) { this.yeucauApi("laydlbcao", {}, khiTcong, khiLoi); },
-    layDsTrang: function(khiTcong, khiLoi) { this.yeucauApi("laydstrang", {}, khiTcong, khiLoi); },
-    ktraQuyenGv: function(taik, khiTcong, khiLoi) { this.yeucauApi("ktraquyengv", { tkcanb: taik }, khiTcong, khiLoi); },
-    ktraQuyenGvTab: function(taik, khiTcong, khiLoi) { this.yeucauApi("ktraquyengvtab", { tkcanb: taik }, khiTcong, khiLoi); },
-    gvLaydsCanb: function(khiTcong, khiLoi) { this.yeucauApi("gvlaydscanb", {}, khiTcong, khiLoi); },
-    gvXulyNviec: function(tdtai, khiTcong, khiLoi) { this.yeucauApi("gvxulynviec", { tdtai: tdtai }, khiTcong, khiLoi); },
-    gvLaydlBdau: function(khiTcong, khiLoi) { this.yeucauApi("gvlaydlbdau", {}, khiTcong, khiLoi); },
-    taiTepBcao: function(tdtai, khiTcong, khiLoi) { this.yeucauApi("taitepbcao", { tdtai: tdtai }, khiTcong, khiLoi); },
-    xoaTepBcao: function(tdtai, khiTcong, khiLoi) { this.yeucauApi("xoatepbcao", { tdtai: tdtai }, khiTcong, khiLoi); },
-    hoiDapAi: function(cauHoi, khiTcong, khiLoi) { this.yeucauApi("hoidapai", { cauhoi: cauHoi }, khiTcong, khiLoi); },
-    ghiKetQuaThop: function(dl, khiTcong, khiLoi) { this.yeucauApi("ghiketquathop", { dldeu: dl }, khiTcong, khiLoi); }
-};
+// --- CÁC BIẾN CẤU HÌNH ĐỊNH DANH HỆ THỐNG ---
+var PGV_LINK_LOGO = "https://i.ibb.co/d0JNW94Z/logo-l-a-ch-n6.png"; 
+var PGV_TEN_TRUONG = "Trường TH&THCS Hợp Thành";
+var PGV_TEN_TRUONG_UP = "TRƯỜNG TH&THCS HỢP THÀNH";
+var PGV_TEN_PM = "Quản lý Nhiệm vụ";
+var PGV_TEN_PM_UP = "QUẢN LÝ CÔNG VIỆC";
+var PGV_PHIEN_BAN = "V2.3.2026";
+var PGV_TAC_GIA = "HOÀNG NGỌC LÂM";
+var PGV_GOOGLE_CLIENT_ID = "407480994586-m6fpq6sfcc90qqj9k08rsmi1lge6br94.apps.googleusercontent.com";
+var PGV_MO_TA = "Hệ thống quản lý hiệu quả công việc nội bộ - " + PGV_TEN_TRUONG;
