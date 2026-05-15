@@ -36,7 +36,8 @@
        ========================================================================== */
     window.khachApi = {
         yeucauApi: function(hdong, tdtai, khiTcong, khiLoi) {
-            var dlieu = { hdong: hdong, ...tdtai };
+            // SỬA LỖI: Bổ sung "token: window.PGV_TOKEN" vào luồng Payload gửi đi
+            var dlieu = { hdong: hdong, token: window.PGV_TOKEN, ...tdtai };
             fetch((typeof ddungApi !== 'undefined' ? ddungApi : ""), {
                 method: 'POST',
                 headers: { 'Content-Type': 'text/plain;charset=utf-8' }, 
@@ -308,10 +309,13 @@
     function xulyPhienDn(phanho) {
       try {
         const tdtai = giaimaJwt(phanho.credential);
-        const thtinh = "Account"; 
         const idht = tdtai["email"]; 
         sessionStorage.setItem("MA_PBAN_HT", idht);
+        // SỬA LỖI: Lưu trữ JWT Token
+        sessionStorage.setItem("PGV_TOKEN", phanho.credential);
+        
         window.PGV_ID_TC = idht; 
+        window.PGV_TOKEN = phanho.credential;
         location.reload(); 
       } catch(loi) {
         hienThongbLoi("Không thể xác thực phiên đăng nhập do lỗi bảo mật trình duyệt. Vui lòng thử lại.");
@@ -327,7 +331,13 @@
       return JSON.parse(noidunjson);
     }
 
-    function thoatTaik() { sessionStorage.removeItem("MA_PBAN_HT"); window.PGV_ID_TC = null; location.reload(); }
+    function thoatTaik() { 
+        sessionStorage.removeItem("MA_PBAN_HT"); 
+        sessionStorage.removeItem("PGV_TOKEN"); 
+        window.PGV_ID_TC = null; 
+        window.PGV_TOKEN = null;
+        location.reload(); 
+    }
 
     let tgiantre;
     function hienTaiDl(tb) { const mh = document.getElementById('lopPhuTai'); const ch = document.getElementById('chuTaiDl'); if(ch) ch.innerText = tb; if(mh) { clearTimeout(tgiantre); mh.style.display = 'flex'; void mh.offsetWidth; mh.style.opacity = '1'; } }
@@ -341,7 +351,13 @@
     $(document).ready(function() {
       if (!kiemtDungt()) return; 
       const tkluuhd = sessionStorage.getItem("MA_PBAN_HT");
-      if(tkluuhd) { window.PGV_ID_TC = tkluuhd; document.getElementById('manhChao').style.display = 'none'; chbiHt(); } 
+      const tokenluu = sessionStorage.getItem("PGV_TOKEN"); // Khôi phục token
+      if(tkluuhd && tokenluu) { 
+          window.PGV_ID_TC = tkluuhd; 
+          window.PGV_TOKEN = tokenluu;
+          document.getElementById('manhChao').style.display = 'none'; 
+          chbiHt(); 
+      } 
       else { document.getElementById('manhChao').style.display = 'flex'; }
     });
 
