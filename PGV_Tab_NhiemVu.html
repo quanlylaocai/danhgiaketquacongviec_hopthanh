@@ -158,15 +158,33 @@ function nopBcaoChinh() {
 
     hienThongb('xn', "Hệ thống sẽ đồng bộ nhật ký và nộp báo cáo. Xác nhận?", function() {
       const ntn = document.getElementById('nutNopBcao'); if(ntn) ntn.disabled = true; hienTaiDl("🚀 Bước 1: Đang lưu vào nhật ký cá nhân...");
+      
       xulyLuuTam(true, function() {
           hienTaiDl("🚀 Bước 2: Đang ghi vào dữ liệu tổng...");
           let ht = $('#chuKqHthi'); let chukq = ht.is('input, select, textarea') ? ht.val() : ht.text(); chukq = chukq ? chukq.trim() : "";
-          const cnb = { ttrg: canbHientai.canb.ttrg, tenn: canbHientai.tde.tenn, snnghi: $('#nhapSngayNghi').val(), nhoc: canbHientai.tde.nhoc, tgian: canbHientai.tde.tgian, kq: chukq, dthuong: $('#nhapDiemThuong').val(), kienn: $('#nhapYkien').val(), bcao: maHoaBcao($('#nhapBcao').val() || "", window.tepdinhkBcao), ldo: $('#nhapLdoNghi').val(), taik: window.PGV_ID_TC };
-          hienTaiDl("🚀 Bước 3: Thực hiện nộp báo cáo " + cnb.tgian);
+          
+          // Trích xuất mảng dữ liệu nhiệm vụ hiển thị trực tiếp để gửi vào tải trọng
+          let dlbg = [];
+          $('#bangNviec tbody tr').each(function() {
+              if ($(this).find('td').length > 1) {
+                  let kqchon = $(this).find('.chonKq').val() || ""; let ndd = $(this).find('.nhapNgay').val() || ""; let ndc = $(this).find('.nhapNdung').val() || ""; let hc = ""; let ltd = "";
+                  if ($(this).attr('data-is-new') === "true") { hc = $(this).find('.nhapHchot').val() || ""; ltd = $(this).find('.nhapTdo').val() || ""; } 
+                  else { hc = $(this).attr('data-deadline') || ""; ltd = $(this).attr('data-type') || ""; }
+                  dlbg.push([ndc, hc, ltd, kqchon, ndd]);
+              }
+          });
+
+          // Biến "dlbang" hiện đã mang toàn bộ kết cấu mảng nhiệm vụ gửi qua máy chủ
+          const cnb = { ttrg: canbHientai.canb.ttrg, tenn: canbHientai.tde.tenn, snnghi: $('#nhapSngayNghi').val(), nhoc: canbHientai.tde.nhoc, tgian: canbHientai.tde.tgian, kq: chukq, dthuong: $('#nhapDiemThuong').val(), kienn: $('#nhapYkien').val(), bcao: maHoaBcao($('#nhapBcao').val() || "", window.tepdinhkBcao), ldo: $('#nhapLdoNghi').val(), taik: window.PGV_ID_TC, dlbang: dlbg };
+          
           khachApi.nopBcao(cnb, function(kq) {
             anTaiDl(); if(ntn) ntn.disabled = false; 
-            if (kq && kq.ttai === 'tcong') { $('#chuTrangThai').text("Đã nộp báo cáo"); let tc = (kq.lacn === true) ? "Đã nộp lại kết quả mới nhất của " + cnb.tgian : "Đã nộp xong kết quả " + cnb.tgian; hienThongb('tcong', tc); if(typeof taiDlBdau === 'function') taiDlBdau(); if(typeof khaBcao === 'function') khaBcao(); } 
-            else { hienThongb('loi', "Lỗi nộp báo cáo: " + (kq ? kq.tbao : "Lỗi")); }
+            if (kq && kq.ttai === 'tcong') { 
+                $('#chuTrangThai').text("Đã nộp báo cáo"); 
+                let tc = (kq.lacn === true) ? "Đã nộp lại kết quả mới nhất của " + cnb.tgian : "Đã nộp xong kết quả " + cnb.tgian; 
+                hienThongb('tcong', tc + "\n(Hệ thống đã đồng bộ thành công sang TongHopCongViec)"); 
+                if(typeof taiDlBdau === 'function') taiDlBdau(); if(typeof khaBcao === 'function') khaBcao(); 
+            } else { hienThongb('loi', "Lỗi nộp báo cáo: " + (kq ? kq.tbao : "Lỗi")); }
           }, function(loi) { if(ntn) ntn.disabled = false; if(typeof khiLoiMayChu === 'function') khiLoiMayChu(loi); });
       });
     });
@@ -184,7 +202,6 @@ function veBangNviec(db) {
         let nutx = lq ? `<button class="btn btn-sm btn-danger py-0 px-2" onclick="xoaDongNv(this)" title="Xoá dòng (Quyền Admin)">✕</button>` : ``;
         let dg = `<tr class="dongNv" data-deadline="${nttc}" data-type="${ltd}" data-is-new="false"><td class="text-center align-middle oStt">${sn}</td><td><textarea class="form-control nhapNdung" readonly oninput="cdang(this)" onfocus="cdang(this)" rows="1">${ndc}</textarea></td><td class="text-center align-middle">${nttc}</td><td class="text-center align-middle">${ltd}</td><td class="align-middle"><select class="form-select form-select-sm chonKq shadow-sm" onchange="tinhtTdong()" style="border:none; font-size:13px;"><option value="">-- Chọn --</option><option value="Chất lượng đạt yêu cầu" ${kqchon === 'Chất lượng đạt yêu cầu' ? 'selected' : ''}>Đạt yêu cầu</option><option value="Chất lượng chưa đạt yêu cầu" ${kqchon === 'Chất lượng chưa đạt yêu cầu' ? 'selected' : ''}>Chưa đạt</option></select></td><td class="align-middle"><input type="text" class="form-control form-control-sm nhapNgay shadow-sm text-center" onchange="tinhtTdong()" onkeyup="tinhtTdong()" value="${ndd}" placeholder="dd/mm/yyyy" style="font-size:13px;"></td><td class="text-center align-middle">${nutx}</td></tr>`; bg.append(dg);
     });
-    // Gỡ độ trễ nhân tạo: Giảm timeout từ 300ms xuống 10ms để render DOM tức thì
     setTimeout(() => { $('#bangNviec textarea').each(function() { cdang(this); }); tinhtTdong(); khaBcao(); }, 10);
 }
 
