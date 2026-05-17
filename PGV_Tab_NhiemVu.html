@@ -37,12 +37,10 @@
   </div>
 
   <div class="d-flex align-items-center mb-2 px-2 py-1 gap-2 flex-wrap" style="background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 4px; min-height: 42px;">
-     <!-- CẬP NHẬT: Thay đổi justify-content-center thành justify-content-start để căn lề trái, thêm flex: 1 để bù trừ không gian -->
      <div class="d-flex align-items-center justify-content-start px-3" style="flex: 1;">
          <span class="nhanNhiemVu me-2 text-nowrap">Số ngày nghỉ:</span><input type="number" id="nhapSngayNghi" class="nhapTuyChinh text-center me-2" style="width: 45px; font-weight: bold;" placeholder="0">
          <textarea id="nhapLdoNghi" class="form-control me-3" placeholder="Nhập lý do..." style="height: 30px; min-height: 30px; font-size: 13px; border-radius: 4px; width: 300px; resize: none; overflow: hidden; white-space: pre-wrap; padding: 4px 8px;" oninput="gdang(this)" onfocus="gdang(this)" onblur="cgon(this, '30px')"></textarea>
      </div>
-     <!-- CẬP NHẬT: Gỡ bỏ overflow: hidden, thiết lập flex: auto, bổ sung w-auto và text-nowrap tự động giãn ngang -->
      <div class="d-flex align-items-center justify-content-end gap-2" style="flex: auto;">
         <select id="hopChonGv" class="form-select form-select-sm border-primary fw-bold text-primary shadow-sm text-nowrap w-auto" style="display: none; height: 30px; font-size: 12px;" disabled><option value="">-- GV --</option></select>
         <button class="btn btn-success btn-sm fw-bold d-flex align-items-center px-3 text-nowrap w-auto" onclick="xulyLuuTam()" style="height: 30px; justify-content: center;"><i class="bi bi-save me-1"></i> Lưu nhật ký</button>
@@ -147,6 +145,7 @@ function xulyLuuTam(ath = false, xltc = null) {
     }, function(loi) { if(!ath) anTaiDl(); if(ntl && !ath) ntl.disabled = false; if (typeof hienThongb === 'function') hienThongb('loi', "Lỗi Server: " + loi.message); else alert("Lỗi Server: " + loi.message); });
 }
 
+// BỔ SUNG LỆNH KẾT NỐI VỚI HÀM "ĐỒNG BỘ TỔNG HỢP" THEO ĐÚNG CHỈ ĐẠO
 function nopBcaoChinh() {
     const gn = parseInt($('#nhapSngayNghi').val()) || 0, ld = $('#nhapLdoNghi').val().trim();
     if (gn > 0 && ld === "") { hienThongb('cbh', `Bạn đã có ${gn} ngày nghỉ.\nPhải nhập lý do!`, () => setTimeout(() => $('#nhapLdoNghi').focus(), 500)); return; }
@@ -161,14 +160,36 @@ function nopBcaoChinh() {
     hienThongb('xn', "Hệ thống sẽ đồng bộ nhật ký và nộp báo cáo. Xác nhận?", function() {
       const ntn = document.getElementById('nutNopBcao'); if(ntn) ntn.disabled = true; hienTaiDl("🚀 Bước 1: Đang lưu vào nhật ký cá nhân...");
       xulyLuuTam(true, function() {
-          hienTaiDl("🚀 Bước 2: Đang ghi vào dữ liệu tổng...");
+          hienTaiDl("🚀 Bước 2: Đang nộp dữ liệu tổng (DATAGV)...");
           let ht = $('#chuKqHthi'); let chukq = ht.is('input, select, textarea') ? ht.val() : ht.text(); chukq = chukq ? chukq.trim() : "";
           const cnb = { ttrg: canbHientai.canb.ttrg, tenn: canbHientai.tde.tenn, snnghi: $('#nhapSngayNghi').val(), nhoc: canbHientai.tde.nhoc, tgian: canbHientai.tde.tgian, kq: chukq, dthuong: $('#nhapDiemThuong').val(), kienn: $('#nhapYkien').val(), bcao: maHoaBcao($('#nhapBcao').val() || "", window.tepdinhkBcao), ldo: $('#nhapLdoNghi').val(), taik: window.PGV_ID_TC };
-          hienTaiDl("🚀 Bước 3: Thực hiện nộp báo cáo " + cnb.tgian);
+          
+          // GỌI HÀM NỘP BÁO CÁO CŨ
           khachApi.nopBcao(cnb, function(kq) {
-            anTaiDl(); if(ntn) ntn.disabled = false; 
-            if (kq && kq.ttai === 'tcong') { $('#chuTrangThai').text("Đã nộp báo cáo"); let tc = (kq.lacn === true) ? "Đã nộp lại kết quả mới nhất của " + cnb.tgian : "Đã nộp xong kết quả " + cnb.tgian; hienThongb('tcong', tc); if(typeof taiDlBdau === 'function') taiDlBdau(); if(typeof khaBcao === 'function') khaBcao(); } 
-            else { hienThongb('loi', "Lỗi nộp báo cáo: " + (kq ? kq.tbao : "Lỗi")); }
+            if (kq && kq.ttai === 'tcong') { 
+                
+                // === [HÀNH ĐỘNG MỚI] GỌI CHUỖI ĐỒNG BỘ SANG TongHop BẰNG HÀM VIẾT RIÊNG ===
+                hienTaiDl("🚀 Bước 3: Đang kết nối hàm đồng bộ Nhật ký tổng hợp...");
+                khachApi.dongBoTongHop(cnb, function(kqTH) {
+                    anTaiDl(); if(ntn) ntn.disabled = false; 
+                    if (kqTH && kqTH.ttai === 'tcong') {
+                        $('#chuTrangThai').text("Đã nộp báo cáo"); 
+                        let tc = (kq.lacn === true) ? "Đã nộp lại kết quả mới nhất của " + cnb.tgian : "Đã nộp xong kết quả " + cnb.tgian; 
+                        hienThongb('tcong', tc + "\n(Hệ thống đã đồng bộ thành công sang TongHop)"); 
+                        if(typeof taiDlBdau === 'function') taiDlBdau(); if(typeof khaBcao === 'function') khaBcao(); 
+                    } else {
+                        hienThongb('loi', "Đã nộp Báo cáo nhưng có lỗi khi đồng bộ Nhật ký: " + (kqTH.tbao || "Không xác định"));
+                    }
+                }, function(loiTH) {
+                    anTaiDl(); if(ntn) ntn.disabled = false; 
+                    hienThongb('loi', "Lỗi kết nối hàm đồng bộ TongHop: " + loiTH.message);
+                });
+                // =========================================================================
+
+            } else { 
+                anTaiDl(); if(ntn) ntn.disabled = false; 
+                hienThongb('loi', "Lỗi nộp báo cáo: " + (kq ? kq.tbao : "Lỗi")); 
+            }
           }, function(loi) { if(ntn) ntn.disabled = false; if(typeof khiLoiMayChu === 'function') khiLoiMayChu(loi); });
       });
     });
@@ -186,7 +207,7 @@ function veBangNviec(db) {
         let nutx = lq ? `<button class="btn btn-sm btn-danger py-0 px-2" onclick="xoaDongNv(this)" title="Xoá dòng (Quyền Admin)">✕</button>` : ``;
         let dg = `<tr class="dongNv" data-deadline="${nttc}" data-type="${ltd}" data-is-new="false"><td class="text-center align-middle oStt">${sn}</td><td><textarea class="form-control nhapNdung" readonly oninput="cdang(this)" onfocus="cdang(this)" rows="1">${ndc}</textarea></td><td class="text-center align-middle">${nttc}</td><td class="text-center align-middle">${ltd}</td><td class="align-middle"><select class="form-select form-select-sm chonKq shadow-sm" onchange="tinhtTdong()" style="border:none; font-size:13px;"><option value="">-- Chọn --</option><option value="Chất lượng đạt yêu cầu" ${kqchon === 'Chất lượng đạt yêu cầu' ? 'selected' : ''}>Đạt yêu cầu</option><option value="Chất lượng chưa đạt yêu cầu" ${kqchon === 'Chất lượng chưa đạt yêu cầu' ? 'selected' : ''}>Chưa đạt</option></select></td><td class="align-middle"><input type="text" class="form-control form-control-sm nhapNgay shadow-sm text-center" onchange="tinhtTdong()" onkeyup="tinhtTdong()" value="${ndd}" placeholder="dd/mm/yyyy" style="font-size:13px;"></td><td class="text-center align-middle">${nutx}</td></tr>`; bg.append(dg);
     });
-    setTimeout(() => { $('#bangNviec textarea').each(function() { cdang(this); }); tinhtTdong(); khaBcao(); }, 300);
+    setTimeout(() => { $('#bangNviec textarea').each(function() { cdang(this); }); tinhtTdong(); khaBcao(); }, 10);
 }
 
 function cdang(ptu) { ptu.style.height = 'auto'; ptu.style.height = (ptu.scrollHeight) + 'px'; }
