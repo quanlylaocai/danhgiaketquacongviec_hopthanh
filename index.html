@@ -415,7 +415,8 @@
       datTaiDl(false); $('#manhChao').hide(); $('.modal-backdrop').remove(); $('body').removeClass('modal-open').css('overflow', ''); $('#ungDungChinh .tab-content').removeClass('ndKhoa');
       if (!kq || typeof kq !== 'object') { hienThongbLoi("Dữ liệu lỗi."); return; }
       if (kq.ttai === 'loi') { hienThongbLoi("Lỗi Hệ Thống: " + kq.tbao); return; }
-      
+      // THÊM DÒNG NÀY ĐỂ HIỂN THỊ EMAIL
+  $('#chuEmail').text(window.PGV_ID_TC || "Chưa xác định");
       // [TỐI ƯU UX] Chống giật khung hình: Xóa bỏ hiệu ứng fadeIn/fadeOut không cần thiết
       if (!$('#bo-cuc-he-thong').is(':visible')) $('#bo-cuc-he-thong').css('display', 'flex');
 
