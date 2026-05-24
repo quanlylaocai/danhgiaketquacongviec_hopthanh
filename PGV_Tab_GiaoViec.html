@@ -9,7 +9,6 @@
   #khuGvChinh th { background-color: #0d6efd; color: white; text-align: center; padding: 8px 4px; border: 1px solid #dee2e6; vertical-align: middle; font-size: 13px; }
   #khuGvChinh td { border: 1px solid #999; padding: 0 !important; vertical-align: middle; }
   
-  /* CẬP NHẬT: CSS ép textarea co dãn tự động và ẩn thanh cuộn */
   #gvBangNv textarea.form-control { font-family: 'Times New Roman', Times, serif; font-size: 14px; border: none !important; border-radius: 0; box-shadow: none !important; width: 100%; padding: 6px 4px; margin: 0; background-color: transparent; resize: none; overflow-y: hidden; min-height: 35px; line-height: 1.4; white-space: pre-wrap; word-wrap: break-word; box-sizing: border-box; }
   
   #gvBangNv input.form-control, #gvBangNv select.form-select { font-family: 'Times New Roman', Times, serif; font-size: 14px; border: none !important; box-shadow: none !important; width: 100%; height: 100%; padding: 4px; background-color: transparent; }
@@ -164,7 +163,6 @@
             if (!isNaN(dcstt)) { 
                 ddemDong = dcstt + 1; 
             } 
-            // CẬP NHẬT: Kích hoạt tự giãn dòng đồng bộ sau khi nạp dữ liệu xong
             setTimeout(() => { 
                 document.querySelectorAll('#khuGvChinh textarea.form-control').forEach(ptu => gvCoDan(ptu)); 
             }, 300); 
@@ -175,6 +173,44 @@
         if (typeof canbHientai !== 'undefined' && canbHientai.qchon === true) {
             const btnChung = document.getElementById('btnCapNhatChung');
             if (btnChung) btnChung.style.display = 'inline-block';
+        }
+    }
+
+    // ================= HÀM XỬ LÝ DẤU * =================
+    function gvKiemTraDauSao(textarea) {
+        const dong = textarea.closest('tr');
+        const ndung = textarea.value.trim();
+        const oNgayGv = dong.querySelector('.oNgayGv');
+        const oNnghanGv = dong.querySelector('.oNnghanGv');
+        const isNewRow = dong.getAttribute('data-is-new') === 'true';
+        
+        if (ndung.startsWith("*")) {
+            // Gán "Nhiệm vụ chung" cho cột thời gian HT
+            if (oNgayGv.value !== "Nhiệm vụ chung") {
+                oNgayGv.value = "Nhiệm vụ chung";
+                oNgayGv.disabled = true;
+                oNgayGv.style.backgroundColor = '#d1e7dd';
+            }
+            // Gán "ALL" cho người thực hiện
+            if (oNnghanGv.value !== "ALL") {
+                oNnghanGv.value = "ALL";
+                oNnghanGv.disabled = true;
+                oNnghanGv.style.backgroundColor = '#d1e7dd';
+            }
+        } else {
+            // Nếu dòng mới và không còn dấu *, trả về trạng thái bình thường
+            if (isNewRow) {
+                if (oNgayGv.disabled) {
+                    oNgayGv.disabled = false;
+                    oNgayGv.value = "";
+                    oNgayGv.style.backgroundColor = '';
+                }
+                if (oNnghanGv.disabled && oNnghanGv.value === "ALL") {
+                    oNnghanGv.disabled = false;
+                    oNnghanGv.value = "";
+                    oNnghanGv.style.backgroundColor = '';
+                }
+            }
         }
     }
 
@@ -213,18 +249,30 @@
         
         const cv = (bltd === "Cho vượt tiến độ") ? "selected" : "";
         
-        // CẬP NHẬT: Thêm rows="1", oninput và onfocus vào textarea để khởi kích quá trình tự động đo chiều cao cuộn
-        tr.innerHTML = `<td class="oHdong">${btnxoa}</td><td class="text-center"><input type="text" class="form-control text-center oSttGv" value="${bstt}" readonly></td><td><textarea class="form-control oNdGv" placeholder="Nhập nội dung..." rows="1" oninput="gvCoDan(this)" onfocus="gvCoDan(this)"></textarea></td><td><input type="text" class="form-control text-center oNgayGv" placeholder="dd/mm/yyyy" onkeyup="gvDinhDangNgay(this, event)"></td><td><select class="form-select text-center oTdoGv" ${dcb}><option value="">--Chọn--</option><option value="Cho vượt tiến độ" ${cv}>Cho vượt tiến độ</option></select></td><td><select class="form-select oNnghanGv" onchange="gvDoiNgn(this)" ${dcb}>${lchon}</select></td><td><textarea class="form-control text-center oGchuGv" placeholder="Ghi chú" rows="1" oninput="gvCoDan(this)" onfocus="gvCoDan(this)"></textarea></td>`; 
+        // Tạo dòng mới (nếu dong === null) thì dùng oninput có gọi gvKiemTraDauSao
+        let textareaOnInput = dong === null ? 'oninput="gvCoDan(this); gvKiemTraDauSao(this)"' : 'oninput="gvCoDan(this)"';
+        tr.innerHTML = `<td class="oHdong">${btnxoa}</td><td class="text-center"><input type="text" class="form-control text-center oSttGv" value="${bstt}" readonly></td><td><textarea class="form-control oNdGv" placeholder="Nhập nội dung..." rows="1" ${textareaOnInput} onfocus="gvCoDan(this)"></textarea></td><td><input type="text" class="form-control text-center oNgayGv" placeholder="dd/mm/yyyy" onkeyup="gvDinhDangNgay(this, event)"></td><td><select class="form-select text-center oTdoGv" ${dcb}><option value="">--Chọn--</option><option value="Cho vượt tiến độ" ${cv}>Cho vượt tiến độ</option></select></td><td><select class="form-select oNnghanGv" onchange="gvDoiNgn(this)" ${dcb}>${lchon}</select></td><td><textarea class="form-control text-center oGchuGv" placeholder="Ghi chú" rows="1" oninput="gvCoDan(this)" onfocus="gvCoDan(this)"></textarea></td>`;
         
         tr.querySelector('.oNdGv').value = bnd;
         tr.querySelector('.oNgayGv').value = bhc;
         tr.querySelector('.oTdoGv').value = bltd;
         tr.querySelector('.oGchuGv').value = bgc;
-
+        
+        // Nếu là dòng cũ có dấu * thì set lại disabled và giá trị
+        if (dong && bnd.trim().startsWith("*")) {
+            const oNgay = tr.querySelector('.oNgayGv');
+            const oNguoi = tr.querySelector('.oNnghanGv');
+            oNgay.value = "Nhiệm vụ chung";
+            oNgay.disabled = true;
+            oNgay.style.backgroundColor = '#d1e7dd';
+            oNguoi.value = "ALL";
+            oNguoi.disabled = true;
+            oNguoi.style.backgroundColor = '#d1e7dd';
+        }
+        
         tb.appendChild(tr);
     }
     
-    // CẬP NHẬT: Hàm giãn dòng lõi (Bảo tồn nguyên vẹn)
     function gvCoDan(ptu) { 
         ptu.style.height = 'auto'; 
         ptu.style.height = (ptu.scrollHeight) + 'px'; 
@@ -297,56 +345,56 @@
     }
 
     function gvCapNhatNhiemVuChung() {
-    const nm = document.getElementById('gvLocNam').value;
-    const th_htai = document.getElementById('gvLocThang').value;
-    let dsNviec = [];
-    
-    const sds = document.querySelectorAll('#gvThanBang tr');
-    sds.forEach(dong => {
-        const ndg = dong.querySelector('.oNdGv').value.trim();
-        // Lọc các dòng có nội dung bắt đầu bằng dấu *
-        if (ndg && ndg.startsWith("*")) {
-            dsNviec.push({
-                stt: dong.querySelector('.oSttGv').value,
-                ndung: ndg,
-                hchot: dong.querySelector('.oNgayGv').value.trim(),
-                tdo: dong.querySelector('.oTdoGv').value,
-                gchu: dong.querySelector('.oGchuGv').value.trim(),
-                ngnhan: "ALL",
-                trangngnhan: "ALL",
-                tenngnhan: "-TOÀN TRƯỜNG-"
-            });
-        }
-    });
-    
-    if (dsNviec.length === 0) {
-        gvTbaoNhanh('cbh', "Không tìm thấy nhiệm vụ chung (dòng có nội dung bắt đầu bằng *) để cập nhật!");
-        return;
-    }
-
-    gvDatTai(true, "⏳ Đang cập nhật nhiệm vụ chung...");
-    
-    function ghiTungDong(index) {
-        if (index >= dsNviec.length) {
-            gvDatTai(false);
-            gvTbaoNhanh('tcong', "Đã cập nhật nhiệm vụ chung thành công!");
+        const nm = document.getElementById('gvLocNam').value;
+        const th_htai = document.getElementById('gvLocThang').value;
+        let dsNviec = [];
+        
+        const sds = document.querySelectorAll('#gvThanBang tr');
+        sds.forEach(dong => {
+            const ndg = dong.querySelector('.oNdGv').value.trim();
+            // Lọc các dòng có nội dung bắt đầu bằng dấu *
+            if (ndg && ndg.startsWith("*")) {
+                dsNviec.push({
+                    stt: dong.querySelector('.oSttGv').value,
+                    ndung: ndg,
+                    hchot: dong.querySelector('.oNgayGv').value.trim(),
+                    tdo: dong.querySelector('.oTdoGv').value,
+                    gchu: dong.querySelector('.oGchuGv').value.trim(),
+                    ngnhan: "ALL",
+                    trangngnhan: "ALL",
+                    tenngnhan: "-TOÀN TRƯỜNG-"
+                });
+            }
+        });
+        
+        if (dsNviec.length === 0) {
+            gvTbaoNhanh('cbh', "Không tìm thấy nhiệm vụ chung (dòng có nội dung bắt đầu bằng *) để cập nhật!");
             return;
         }
-        khachApi.gvXulyNviec({ nam: nm, thang: th_htai, nviec: dsNviec[index] }, function(kq) {
-            if (kq && kq.ttai === 'tcong') {
-                ghiTungDong(index + 1);
-            } else {
+
+        gvDatTai(true, "⏳ Đang cập nhật nhiệm vụ chung...");
+        
+        function ghiTungDong(index) {
+            if (index >= dsNviec.length) {
                 gvDatTai(false);
-                gvTbaoNhanh('loi', "Lỗi Server: " + (kq ? kq.tbao : "Unknown"));
+                gvTbaoNhanh('tcong', "Đã cập nhật nhiệm vụ chung thành công!");
+                return;
             }
-        }, function(l) {
-            gvDatTai(false);
-            gvTbaoNhanh('loi', "Lỗi kết nối: " + l.message);
-        });
+            khachApi.gvXulyNviec({ nam: nm, thang: th_htai, nviec: dsNviec[index] }, function(kq) {
+                if (kq && kq.ttai === 'tcong') {
+                    ghiTungDong(index + 1);
+                } else {
+                    gvDatTai(false);
+                    gvTbaoNhanh('loi', "Lỗi Server: " + (kq ? kq.tbao : "Unknown"));
+                }
+            }, function(l) {
+                gvDatTai(false);
+                gvTbaoNhanh('loi', "Lỗi kết nối: " + l.message);
+            });
+        }
+        
+        ghiTungDong(0);
     }
-    
-    ghiTungDong(0);
-}
 
     function gvXlmChth(btn) {
         const nm = document.getElementById('gvLocNam').value;
