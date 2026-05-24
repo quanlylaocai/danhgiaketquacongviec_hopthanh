@@ -297,58 +297,56 @@
     }
 
     function gvCapNhatNhiemVuChung() {
-        const nm = document.getElementById('gvLocNam').value;
-        const th_htai = document.getElementById('gvLocThang').value;
-        let dsNviec = [];
-        
-        const sds = document.querySelectorAll('#gvThanBang tr');
-        sds.forEach(dong => {
-            const sttVal = dong.querySelector('.oSttGv').value;
-            if (sttVal === "1" || sttVal === "2") {
-                const ndg = dong.querySelector('.oNdGv').value.trim();
-                if (ndg) {
-                    dsNviec.push({
-                        stt: sttVal,
-                        ndung: ndg,
-                        hchot: dong.querySelector('.oNgayGv').value.trim(),
-                        tdo: dong.querySelector('.oTdoGv').value,
-                        gchu: dong.querySelector('.oGchuGv').value.trim(),
-                        ngnhan: "ALL",
-                        trangngnhan: "ALL",
-                        tenngnhan: "-TOÀN TRƯỜNG-"
-                    });
-                }
-            }
-        });
-        
-        if (dsNviec.length === 0) {
-            gvTbaoNhanh('cbh', "Không tìm thấy nhiệm vụ chung (STT 1 và 2) để cập nhật!");
-            return;
-        }
-
-        gvDatTai(true, "⏳ Đang cập nhật nhiệm vụ chung...");
-        
-        function ghiTungDong(index) {
-            if (index >= dsNviec.length) {
-                gvDatTai(false);
-                gvTbaoNhanh('tcong', "Đã cập nhật nhiệm vụ chung thành công!");
-                return;
-            }
-            khachApi.gvXulyNviec({ nam: nm, thang: th_htai, nviec: dsNviec[index] }, function(kq) {
-                if (kq && kq.ttai === 'tcong') {
-                    ghiTungDong(index + 1);
-                } else {
-                    gvDatTai(false);
-                    gvTbaoNhanh('loi', "Lỗi Server: " + (kq ? kq.tbao : "Unknown"));
-                }
-            }, function(l) {
-                gvDatTai(false);
-                gvTbaoNhanh('loi', "Lỗi kết nối: " + l.message);
+    const nm = document.getElementById('gvLocNam').value;
+    const th_htai = document.getElementById('gvLocThang').value;
+    let dsNviec = [];
+    
+    const sds = document.querySelectorAll('#gvThanBang tr');
+    sds.forEach(dong => {
+        const ndg = dong.querySelector('.oNdGv').value.trim();
+        // Lọc các dòng có nội dung bắt đầu bằng dấu *
+        if (ndg && ndg.startsWith("*")) {
+            dsNviec.push({
+                stt: dong.querySelector('.oSttGv').value,
+                ndung: ndg,
+                hchot: dong.querySelector('.oNgayGv').value.trim(),
+                tdo: dong.querySelector('.oTdoGv').value,
+                gchu: dong.querySelector('.oGchuGv').value.trim(),
+                ngnhan: "ALL",
+                trangngnhan: "ALL",
+                tenngnhan: "-TOÀN TRƯỜNG-"
             });
         }
-        
-        ghiTungDong(0);
+    });
+    
+    if (dsNviec.length === 0) {
+        gvTbaoNhanh('cbh', "Không tìm thấy nhiệm vụ chung (dòng có nội dung bắt đầu bằng *) để cập nhật!");
+        return;
     }
+
+    gvDatTai(true, "⏳ Đang cập nhật nhiệm vụ chung...");
+    
+    function ghiTungDong(index) {
+        if (index >= dsNviec.length) {
+            gvDatTai(false);
+            gvTbaoNhanh('tcong', "Đã cập nhật nhiệm vụ chung thành công!");
+            return;
+        }
+        khachApi.gvXulyNviec({ nam: nm, thang: th_htai, nviec: dsNviec[index] }, function(kq) {
+            if (kq && kq.ttai === 'tcong') {
+                ghiTungDong(index + 1);
+            } else {
+                gvDatTai(false);
+                gvTbaoNhanh('loi', "Lỗi Server: " + (kq ? kq.tbao : "Unknown"));
+            }
+        }, function(l) {
+            gvDatTai(false);
+            gvTbaoNhanh('loi', "Lỗi kết nối: " + l.message);
+        });
+    }
+    
+    ghiTungDong(0);
+}
 
     function gvXlmChth(btn) {
         const nm = document.getElementById('gvLocNam').value;
