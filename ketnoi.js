@@ -1,5 +1,5 @@
 /* ========================================================================== */
-var ddungApi = "https://script.google.com/macros/s/AKfycbwx-SfK2k6Sgf2oLQCu1Jt55clwz0nuke8YUVv8QgttrmqxgcDti7c8WA8x8jzh5CHy/exec"; 
+var ddungApi = "https://script.google.com/macros/s/AKfycbxZfyI4sxmVO6sEye8T0c3IRtE5hdTmuZRjT11_aXvkjQEoxMK0BJwpEIFQKIBc9s4V7g/exec"; 
 
 // --- CÁC BIẾN CẤU HÌNH ĐỊNH DANH HỆ THỐNG ---
 var PGV_LINK_LOGO = "https://i.ibb.co/d0JNW94Z/logo-l-a-ch-n6.png"; 
