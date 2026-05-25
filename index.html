@@ -107,7 +107,9 @@
         if(typeof PGV_PHIEN_BAN !== 'undefined') document.getElementById('login_version').innerText = PGV_PHIEN_BAN;
         if(typeof PGV_TAC_GIA !== 'undefined') {
             document.getElementById('login_author').innerText = PGV_TAC_GIA;
-            document.getElementById('dev_author_name').innerText = PGV_TAC_GIA;
+            // SỬA LỖI: Kiểm tra phần tử tồn tại trước khi gán
+            var devNameElem = document.getElementById('dev_author_name');
+            if (devNameElem) devNameElem.innerText = PGV_TAC_GIA;
         }
         var metaDesc = document.createElement('meta');
         metaDesc.name = "description";
@@ -195,14 +197,6 @@
     @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     @keyframes gradientMove { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
 
-    .khuTheDev { position: fixed; bottom: 0px; left: 20px; z-index: 9999; display: flex; align-items: center; gap: 10px; padding: 6px 16px; background: linear-gradient(135deg, #0d6efd 0%, #0dcaf0 100%); border-radius: 50px; box-shadow: 0 4px 15px rgba(13, 110, 253, 0.3); color: white; cursor: default; user-select: none; }
-    .khuTheDev:hover { transform: translateY(-2px) scale(1.02); box-shadow: 0 8px 25px rgba(13, 110, 253, 0.5); }
-    .cotChuDev { display: flex; flex-direction: column; line-height: 1.1; text-align: left; }
-    .tenDev { font-weight: 800; font-size: 13px; color: #ffeb3b; text-transform: uppercase; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2); text-wrap: wrap;}
-    .vtDev { font-weight: 500; font-size: 10px; color: #ffffff; opacity: 0.95; margin-top: 2px; }
-    .btuongDev { background: rgba(255, 255, 255, 0.25); border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; box-shadow: inset 0 0 5px rgba(255, 255, 255, 0.1); }
-    .btuongDev i { font-size: 18px; }
-
     #hopLoi { margin-top: 20px; padding: 10px; background: #ffecec; border: 1px solid #f5c6cb; color: #721c24; border-radius: 5px; max-width: 90%; z-index: 10001; position: relative; }
 
     .tab-content { background-color: rgba(255, 255, 255, 0.95) !important; border-radius: 6px; box-shadow: 0 5px 20px rgba(0,0,0,0.08); border: 1px solid rgba(0,0,0,0.1); min-height: calc(100vh - 40px); }
@@ -280,10 +274,7 @@
     <div class="chuTai" id="chuTaiDl">Đang khởi tạo hệ thống...</div>
   </div>
 
-  <div class="khuTheDev">
-    <div class="btuongDev"><i class="bi bi-rocket-takeoff-fill"></i></div>
-    <div class="cotChuDev"><div class="tenDev" id="dev_author_name">ĐANG TẢI...</div><div class="vtDev">System Developer</div></div>
-  </div>
+  <!-- ĐÃ XÓA HOÀN TOÀN THẺ <div class="khuTheDev"> ... </div> -->
 
   <div id="hopLoi" class="mt-3 text-danger border border-danger p-2 bg-light text-start mx-auto shadow-sm rounded" style="display:none; max-width:90%"></div>
 
