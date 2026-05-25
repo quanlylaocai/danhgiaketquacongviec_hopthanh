@@ -273,8 +273,6 @@
     <div class="chuTai" id="chuTaiDl">Đang khởi tạo hệ thống...</div>
   </div>
 
-  <!-- ĐÃ XÓA HOÀN TOÀN THẺ <div class="khuTheDev"> ... </div> -->
-
   <div id="hopLoi" class="mt-3 text-danger border border-danger p-2 bg-light text-start mx-auto shadow-sm rounded" style="display:none; max-width:90%"></div>
 
   <div id="bo-cuc-he-thong" class="bo-cuc-tong" style="display:none;">
@@ -287,6 +285,8 @@
           <div class="tab-pane fade px-4 py-3" id="khuNghi"></div>
           <div class="tab-pane fade px-4 py-3" id="khuYkien"></div>
           <div class="tab-pane fade px-4 py-3" id="khuBaoCao"></div>
+          <!-- Thêm pane cho Cấp quyền -->
+          <div class="tab-pane fade px-4 py-3" id="khuCapQuyen"></div>
         </div>
     </div>
   </div>
@@ -348,7 +348,6 @@
     let windowDaTienHanhTaiNgam = false; 
     let canbHientai = {}; let dataiThop = false; let dlThopGoc = []; let dataiNghi = false; let dlNghiGoc = []; let dataiYkien = false; let dlYkienGoc = []; let dataiBcao = false; let dlBcaoGoc = []; let dlgoc = { diemg: 0, mauc: "" };
     
-    // [KHỞI TẠO BỘ NHỚ ĐỆM] Khắc phục độ trễ khi chọn giáo viên
     let cacheCanb = {}; 
 
     function giaiMaBcao(toanchu) { if (!toanchu) return { chu: "", tepdinhk: [] }; let cactep = []; let chuloc = toanchu.replace(/\[FILE:(.+?)\|([^\]]+)\]/g, function(khop, ten, ddan) { cactep.push({ tentep: ten, duongd: ddan }); return ""; }); return { chu: chuloc.trim(), tepdinhk: cactep }; }
@@ -359,7 +358,6 @@
         await taiCacPhan();
         taiDlBdau();
         taiDsTrang();
-        window.khachApi.ktraQuyenGvTab(window.PGV_ID_TC, function(chop) { if (chop) $('#khuGiaoViec').show(); else $('#khuGiaoViec').hide(); }, khiLoiMayChu);
         $(document).on('keyup', '.nhapNgay', function(e) {
           if (e.which === 8 || e.which === 46) return;
           let v = $(this).val().replace(/\D/g, '');
@@ -368,7 +366,6 @@
           $(this).val(v);
         });
         
-        // Sự kiện chuyển tab luôn sử dụng biến amtham = false để chặn load lại nếu đã có data
         $('#tabTongHop').on('click', () => taiDlThop(false)); 
         $('#tabNghi').on('click', () => taiDlNghi(false)); 
         $('#tabYkien').on('click', () => taiDlYkien(false)); 
@@ -384,16 +381,24 @@
     async function taiCacPhan() {
       try {
         const mb = "?v=" + new Date().getTime();
-        const [phMenu, phNhiemVu, phGiaoViec, phTongHop, phNghi, phYKien, phBaoCao] = await Promise.all([
+        const [phMenu, phNhiemVu, phGiaoViec, phTongHop, phNghi, phYKien, phBaoCao, phCapQuyen] = await Promise.all([
             fetch('./Menu_Doc.html' + mb), fetch('./PGV_Tab_NhiemVu.html' + mb), fetch('./PGV_Tab_GiaoViec.html' + mb),
-            fetch('./PGV_Tab_TongHop.html' + mb), fetch('./PGV_Tab_Nghi.html' + mb), fetch('./PGV_Tab_YKien.html' + mb), fetch('./PGV_Tab_BaoCao.html' + mb)
+            fetch('./PGV_Tab_TongHop.html' + mb), fetch('./PGV_Tab_Nghi.html' + mb), fetch('./PGV_Tab_YKien.html' + mb), 
+            fetch('./PGV_Tab_BaoCao.html' + mb), fetch('./PGV_PhanQuyen.html' + mb)
         ]);
-        document.getElementById('khuVucMenu').innerHTML = await phMenu.text(); document.getElementById('khuNhiemVu').innerHTML = await phNhiemVu.text(); document.getElementById('khuGiaoViecChinh').innerHTML = await phGiaoViec.text(); document.getElementById('khuTongHop').innerHTML = await phTongHop.text(); document.getElementById('khuNghi').innerHTML = await phNghi.text(); document.getElementById('khuYkien').innerHTML = await phYKien.text(); document.getElementById('khuBaoCao').innerHTML = await phBaoCao.text();
+        document.getElementById('khuVucMenu').innerHTML = await phMenu.text(); 
+        document.getElementById('khuNhiemVu').innerHTML = await phNhiemVu.text(); 
+        document.getElementById('khuGiaoViecChinh').innerHTML = await phGiaoViec.text(); 
+        document.getElementById('khuTongHop').innerHTML = await phTongHop.text(); 
+        document.getElementById('khuNghi').innerHTML = await phNghi.text(); 
+        document.getElementById('khuYkien').innerHTML = await phYKien.text(); 
+        document.getElementById('khuBaoCao').innerHTML = await phBaoCao.text();
+        document.getElementById('khuCapQuyen').innerHTML = await phCapQuyen.text();
         
         if (typeof PGV_LINK_LOGO !== 'undefined') { var mnLg = document.getElementById('menu_logo'); if(mnLg) mnLg.src = PGV_LINK_LOGO; }
         if (typeof PGV_TEN_TRUONG !== 'undefined') { var mnSc = document.getElementById('menu_school_name'); if(mnSc) mnSc.innerText = PGV_TEN_TRUONG; }
         
-        ['khuVucMenu', 'khuNhiemVu','khuGiaoViecChinh','khuTongHop','khuNghi','khuYkien','khuBaoCao'].forEach(i => thuchScript(document.getElementById(i)));
+        ['khuVucMenu', 'khuNhiemVu','khuGiaoViecChinh','khuTongHop','khuNghi','khuYkien','khuBaoCao','khuCapQuyen'].forEach(i => thuchScript(document.getElementById(i)));
       } catch (e) { throw new Error("LỖI KẾT NỐI TỆP GIAO DIỆN: " + e.message); }
     }
 
@@ -405,9 +410,8 @@
       datTaiDl(false); $('#manhChao').hide(); $('.modal-backdrop').remove(); $('body').removeClass('modal-open').css('overflow', ''); $('#ungDungChinh .tab-content').removeClass('ndKhoa');
       if (!kq || typeof kq !== 'object') { hienThongbLoi("Dữ liệu lỗi."); return; }
       if (kq.ttai === 'loi') { hienThongbLoi("Lỗi Hệ Thống: " + kq.tbao); return; }
-      // THÊM DÒNG NÀY ĐỂ HIỂN THỊ EMAIL
+      
       $('#chuEmail').text(window.PGV_ID_TC || "Chưa xác định");
-      // [TỐI ƯU UX] Chống giật khung hình: Xóa bỏ hiệu ứng fadeIn/fadeOut không cần thiết
       if (!$('#bo-cuc-he-thong').is(':visible')) $('#bo-cuc-he-thong').css('display', 'flex');
 
       if (kq.koxd) {
@@ -416,43 +420,61 @@
         hienThongb('loi', "⛔ BẠN KHÔNG CÓ QUYỀN TRUY CẬP\n\nHãy liên hệ quản lý."); return;
       }
 
-      // Lưu trữ dữ liệu vào bộ nhớ đệm
-      if(kq.canb && kq.canb.ttrg) {
-         cacheCanb[kq.canb.ttrg] = kq;
-      }
+      if(kq.canb && kq.canb.ttrg) cacheCanb[kq.canb.ttrg] = kq;
 
       $('#khuNhiemVu *').prop('disabled', false); canbHientai = kq; const hs = $('#hopChonGv');
-      if (kq.qchon === true) { hs.show().prop('disabled', false).removeClass('bg-secondary text-white'); if (hs.find('option:first').text().includes('Đang tải')) hs.find('option:first').text('-- GV --'); } else { hs.hide(); }
       
-      // Xác định quyền và các biến
+      // ================== PHÂN QUYỀN THEO BẢNG ==================
       var isSelf = (kq.canb && kq.canb.taik === window.PGV_ID_TC);
-      var quyen = kq.quyen || '';
+      var quyen = kq.quyen || '';   // "", "x", "xx", "xxx"
       
-      // Quyền chỉnh sửa điểm thưởng: chỉ khi xem chính mình và quyền khác 'x'
-      var canEditScore = (isSelf && quyen !== 'x');
-      // Quyền lưu nhật ký / nộp báo cáo: nếu là chính mình hoặc quyền xxx
-      var canSaveJournal = (isSelf || quyen === 'xxx');
-      // Quyền sử dụng nút "Cập nhật nhiệm vụ chung" (batch): chỉ xxx
-      var canUseBatchUpdate = (quyen === 'xxx');
-      // Quyền sử dụng nút "Chuyển tháng mới": xx và xxx
-      var canUseChuyenThang = (quyen === 'xx' || quyen === 'xxx');
-      // Quyền thêm dòng: x, xx, xxx đều có
-      var canAddRow = (quyen === 'x' || quyen === 'xx' || quyen === 'xxx');
-      // Chế độ chỉ đọc cho dữ liệu đã load từ GIAOVIEC: true với x và xx
-      var giaoViecDataReadonly = (quyen !== 'xxx');
-      // Ô năm, tháng chỉ đọc với quyền x
+      // Ô chọn giáo viên: chỉ hiển thị với xx và xxx
+      if (quyen === 'xx' || quyen === 'xxx') {
+          hs.show().prop('disabled', false).removeClass('bg-secondary text-white');
+          if (hs.find('option:first').text().includes('Đang tải')) hs.find('option:first').text('-- GV --');
+      } else {
+          hs.hide();
+      }
+      
+      // Tab Giao việc: hiển thị với x, xx, xxx (không hiển thị với "")
+      if (quyen === 'x' || quyen === 'xx' || quyen === 'xxx') {
+          $('#khuGiaoViec').show();
+      } else {
+          $('#khuGiaoViec').hide();
+      }
+      
+      // Tab Cấp quyền: chỉ xxx
+      window.PGV_SHOW_CAPQUYEN = (quyen === 'xxx');
+      if (typeof kiemTraHienThiTabCapQuyen === 'function') kiemTraHienThiTabCapQuyen();
+      
+      // QUYỀN CHI TIẾT TRÊN TAB NHIỆM VỤ
+      var canEditScore = false;
+      if (quyen === 'xx' && !isSelf) canEditScore = true;
+      if (quyen === 'xxx') canEditScore = true;
+      
+      var canSaveForOther = (quyen === 'xxx');
+      var canSaveForSelf = true;
+      var canShowDeleteButton = (quyen === 'xxx');
+      var canAddRow = true;
+      
+      // QUYỀN TRÊN TAB GIAO VIỆC
+      var giaoViecReadonly = (quyen !== 'xxx');
+      var showChuyenThang = (quyen === 'xx' || quyen === 'xxx');
+      var showBatchUpdate = (quyen === 'xxx');
       var yearMonthReadonly = (quyen === 'x');
       
-      // Lưu các biến toàn cục
-      window.PGV_CAN_EDIT_SCORE = canEditScore;
-      window.PGV_CAN_SAVE_JOURNAL = canSaveJournal;
-      window.PGV_CAN_USE_BATCH_UPDATE = canUseBatchUpdate;
-      window.PGV_CAN_USE_CHUYEN_THANG = canUseChuyenThang;
-      window.PGV_CAN_ADD_ROW = canAddRow;
-      window.PGV_GIAO_VIEC_DATA_READONLY = giaoViecDataReadonly;
-      window.PGV_YEAR_MONTH_READONLY = yearMonthReadonly;
-      window.PGV_IS_SELF = isSelf;
+      // LƯU BIẾN TOÀN CỤC
       window.PGV_QUYEN = quyen;
+      window.PGV_IS_SELF = isSelf;
+      window.PGV_CAN_EDIT_SCORE = canEditScore;
+      window.PGV_CAN_SAVE_FOR_OTHER = canSaveForOther;
+      window.PGV_CAN_SAVE_FOR_SELF = canSaveForSelf;
+      window.PGV_CAN_SHOW_DELETE_BUTTON = canShowDeleteButton;
+      window.PGV_CAN_ADD_ROW = canAddRow;
+      window.PGV_GIAO_VIEC_READONLY = giaoViecReadonly;
+      window.PGV_SHOW_CHUYEN_THANG = showChuyenThang;
+      window.PGV_SHOW_BATCH_UPDATE = showBatchUpdate;
+      window.PGV_YEAR_MONTH_READONLY = yearMonthReadonly;
       
       try {
         $('#chuTenGv').text(kq.tde.tenn || ''); $('#chuNamHoc').text(kq.tde.nhoc || ''); $('#chuThoiGian').text(kq.tde.tgian || ''); $('#nhapSngayNghi').val(kq.tde.snnghi); $('#nhapDiemThuong').val(parseInt(kq.tde.dthuong) || 0);
@@ -462,19 +484,30 @@
         if (typeof veDinhKemBcao === 'function') veDinhKemBcao();
         
         // Điều khiển ô điểm thưởng
-        if (canEditScore) $('#nhapDiemThuong').prop('readonly', false);
-        else $('#nhapDiemThuong').prop('readonly', true);
+        if (canEditScore) {
+            $('#nhapDiemThuong').prop('readonly', false).show();
+        } else {
+            $('#nhapDiemThuong').prop('readonly', true);
+            if (quyen === '') $('#nhapDiemThuong').closest('.d-inline-block').hide();
+            else $('#nhapDiemThuong').closest('.d-inline-block').show();
+        }
         
-        // Điều khiển các nút lưu, nộp báo cáo (chỉ hiện khi canSaveJournal)
-        if (canSaveJournal) $('#btnLuuTam, #btnNopBcao').show().prop('disabled', false);
-        else $('#btnLuuTam, #btnNopBcao').hide();
+        // Điều khiển nút Lưu tạm, Nộp báo cáo
+        if (isSelf) {
+            $('button[onclick="xulyLuuTam()"], #nutNopBcao').show().prop('disabled', false);
+        } else {
+            if (canSaveForOther) {
+                $('button[onclick="xulyLuuTam()"], #nutNopBcao').show().prop('disabled', false);
+            } else {
+                $('button[onclick="xulyLuuTam()"], #nutNopBcao').hide();
+            }
+        }
         
-        // Điều khiển nút thêm dòng (trên bảng nhiệm vụ)
-        if (canAddRow) $('#btnThemDongNv').show().prop('disabled', false);
-        else $('#btnThemDongNv').hide();
+        // Điều khiển nút Thêm dòng (tất cả đều có)
+        $('.nutThem, .btn-outline-primary').show();
         
-        // Các trường nhập khác (nếu không phải self và không phải xxx thì readonly)
-        if (!isSelf && quyen !== 'xxx') {
+        // Điều khiển các trường nghỉ, ý kiến, báo cáo
+        if (!isSelf) {
             $('#nhapSngayNghi, #nhapLdoNghi, #nhapYkien, #nhapBcao').prop('readonly', true);
         } else {
             $('#nhapSngayNghi, #nhapLdoNghi, #nhapYkien, #nhapBcao').prop('readonly', false);
@@ -482,9 +515,10 @@
         
         $('#chuTrangThai').text(kq.tde.tthai || 'CHƯA NỘP BÁO CÁO'); $('#chuKqHthi').text(kq.tde.kq || '');
         if(typeof khoiTaoBoDemDiem === 'function') khoiTaoBoDemDiem(kq.tde.kq, kq.tde.dthuong);
+        
+        window.PGV_SHOW_DELETE_COLUMN = canShowDeleteButton;
         if (typeof veBangNviec === 'function') veBangNviec(kq.bang);
 
-        // [TẢI NGẦM - PRE-FETCH] Nạp sẵn dữ liệu các thẻ sau khi tải xong trang
         if (!windowDaTienHanhTaiNgam) {
              windowDaTienHanhTaiNgam = true;
              setTimeout(function() {
@@ -521,10 +555,8 @@
             hs.off('change').on('change', function() { 
                 const tcd = $(this).val(); 
                 if (tcd) { 
-                    // [TỐI ƯU HÓA: Stale-While-Revalidate] Gọi Cache để đáp ứng 0ms độ trễ
                     if (cacheCanb[tcd]) {
                         khiTaiDlXong(cacheCanb[tcd]);
-                        // Chạy nền cập nhật ngầm nếu có thay đổi
                         window.khachApi.layDlCanb(tcd, window.PGV_ID_TC, function(kq) {
                             if (!kq.koxd) cacheCanb[tcd] = kq;
                         }, function(){});
@@ -634,7 +666,7 @@
                 } 
                 dr += `<td class="p-1 align-middle">${chuh}</td>`; 
             }); 
-            tb.append(dr + '</tr>'); 
+            tb.append(dr + '<tr>'); 
         } 
     }
     
