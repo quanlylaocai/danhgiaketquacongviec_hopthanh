@@ -63,6 +63,31 @@
     let tdtaiXoaCho = null; 
     let ptuChoXoa = null;
 
+    // Áp dụng quyền ngay khi load
+    function apDungQuyenGiaoViec() {
+        // Nút Chuyển tháng mới
+        if (window.PGV_SHOW_CHUYEN_THANG === true) {
+            $('#gvNutChth').show();
+        } else {
+            $('#gvNutChth').hide();
+        }
+        // Nút Cập nhật nhiệm vụ chung
+        if (window.PGV_SHOW_BATCH_UPDATE === true) {
+            $('#btnCapNhatChung').show();
+        } else {
+            $('#btnCapNhatChung').hide();
+        }
+        // Ô Năm học, Tháng: readonly với quyền x
+        if (window.PGV_YEAR_MONTH_READONLY === true) {
+            $('#gvLocNam, #gvLocThang').prop('disabled', true).addClass('readonly-bg');
+        } else {
+            $('#gvLocNam, #gvLocThang').prop('disabled', false).removeClass('readonly-bg');
+        }
+        // Nút Thêm dòng: với x, xx, xxx đều có (nếu có quyền)
+        // Mặc định luôn hiển thị nút Thêm dòng, nhưng nếu muốn kiểm tra thêm có thể dùng biến
+        $('.nutThem').show();
+    }
+
     setTimeout(function() { 
         gvTaiCanb(); 
     }, 500);
@@ -170,56 +195,8 @@
             gvVeDong(); 
         }
 
-        // Áp dụng quyền sau khi vẽ xong
-        gvApDungQuyen();
-    }
-
-    // Hàm áp dụng quyền dựa trên biến window
-    function gvApDungQuyen() {
-        const dataReadonly = window.PGV_GIAO_VIEC_DATA_READONLY === true;
-        const yearMonthReadonly = window.PGV_YEAR_MONTH_READONLY === true;
-        const showChuyenThang = window.PGV_CAN_USE_CHUYEN_THANG === true;
-        const showBatchUpdate = window.PGV_CAN_USE_BATCH_UPDATE === true;
-        const canAddRow = window.PGV_CAN_ADD_ROW === true;
-        
-        // Nút Chuyển tháng mới
-        const btnChuyenThang = document.getElementById('gvNutChth');
-        if (btnChuyenThang) btnChuyenThang.style.display = showChuyenThang ? 'flex' : 'none';
-        
-        // Nút Cập nhật nhiệm vụ chung
-        const btnBatch = document.getElementById('btnCapNhatChung');
-        if (btnBatch) btnBatch.style.display = showBatchUpdate ? 'inline-block' : 'none';
-        
-        // Ô năm, tháng
-        const namSelect = document.getElementById('gvLocNam');
-        const thangSelect = document.getElementById('gvLocThang');
-        if (namSelect) namSelect.disabled = yearMonthReadonly;
-        if (thangSelect) thangSelect.disabled = yearMonthReadonly;
-        
-        // Nút thêm dòng
-        const btnThem = document.querySelector('#khuGvChinh .nutThem');
-        if (btnThem) btnThem.style.display = canAddRow ? 'inline-block' : 'none';
-        
-        // Disable các dòng cũ (không phải dòng mới) nếu dataReadonly = true
-        const allRows = document.querySelectorAll('#gvThanBang tr');
-        allRows.forEach(row => {
-            const isNewRow = row.getAttribute('data-is-new') === 'true';
-            if (dataReadonly && !isNewRow) {
-                // Disable tất cả input, select, textarea, button trong dòng cũ
-                row.querySelectorAll('input, select, textarea, button').forEach(inp => {
-                    if (inp.classList && inp.classList.contains('oSttGv')) return; // giữ STT
-                    inp.disabled = true;
-                });
-            } else if (!dataReadonly || isNewRow) {
-                // Bỏ disable (nhưng giữ nguyên các ô đã bị disable bởi dấu *)
-                row.querySelectorAll('input, select, textarea, button').forEach(inp => {
-                    if (inp.classList && inp.classList.contains('oSttGv')) return;
-                    // Nếu ô đang bị disable bởi dấu * thì không bỏ
-                    const isStarDisabled = inp.getAttribute('data-star-disabled') === 'true';
-                    if (!isStarDisabled) inp.disabled = false;
-                });
-            }
-        });
+        // Áp dụng quyền: ẩn/hiện nút Cập nhật nhiệm vụ chung dựa trên biến toàn cục
+        apDungQuyenGiaoViec();
     }
 
     // ================= HÀM XỬ LÝ DẤU * =================
@@ -235,14 +212,12 @@
             if (oNgayGv.value !== "Nhiệm vụ chung") {
                 oNgayGv.value = "Nhiệm vụ chung";
                 oNgayGv.disabled = true;
-                oNgayGv.setAttribute('data-star-disabled', 'true');
                 oNgayGv.style.backgroundColor = '#d1e7dd';
             }
             // Gán "ALL" cho người thực hiện
             if (oNnghanGv.value !== "ALL") {
                 oNnghanGv.value = "ALL";
                 oNnghanGv.disabled = true;
-                oNnghanGv.setAttribute('data-star-disabled', 'true');
                 oNnghanGv.style.backgroundColor = '#d1e7dd';
             }
         } else {
@@ -252,13 +227,11 @@
                     oNgayGv.disabled = false;
                     oNgayGv.value = "";
                     oNgayGv.style.backgroundColor = '';
-                    oNgayGv.removeAttribute('data-star-disabled');
                 }
                 if (oNnghanGv.disabled && oNnghanGv.value === "ALL") {
                     oNnghanGv.disabled = false;
                     oNnghanGv.value = "";
                     oNnghanGv.style.backgroundColor = '';
-                    oNnghanGv.removeAttribute('data-star-disabled');
                 }
             }
         }
@@ -267,15 +240,19 @@
     function gvVeDong(dong = null) {
         const tb = document.getElementById('gvThanBang');
         const tr = document.createElement('tr');
-        if (dong === null) {
-            tr.setAttribute('data-is-new', 'true');
-        }
         
         let ngnth = (dong && dong[4]) ? dong[4] : "";
         let ngnthH = ngnth.toUpperCase();
+        // Với quyền x và xx, nếu là dòng đã có thì disable hết (giaoViecReadonly)
+        const isReadonlyMode = (window.PGV_GIAO_VIEC_READONLY === true);
         let dcb = (dong && ngnth !== "") ? "disabled" : "";
+        if (isReadonlyMode && dong) dcb = "disabled";
         
         let btnxoa = dong ? `<i class="bi bi-lock-fill text-secondary" title="Đã lưu, không thể xoá"></i>` : `<button class="btn btn-danger btn-sm p-0" style="width:24px; height:24px; line-height:20px;" onclick="gvXoaDong(this)">X</button>`;
+        // Nếu là chế độ readonly và có dong (dòng cũ), không hiển thị nút xóa thật (chỉ icon khóa)
+        if (isReadonlyMode && dong) {
+            btnxoa = `<i class="bi bi-lock-fill text-secondary" title="Không thể xóa"></i>`;
+        }
         
         let lchon = `<option value="">--Chọn--</option>`;
         if (!dcb || ngnthH === 'ALL' || ngnthH === '-TOÀN TRƯỜNG-') { 
@@ -302,6 +279,7 @@
         
         const cv = (bltd === "Cho vượt tiến độ") ? "selected" : "";
         
+        // Tạo dòng mới (nếu dong === null) thì dùng oninput có gọi gvKiemTraDauSao
         let textareaOnInput = dong === null ? 'oninput="gvCoDan(this); gvKiemTraDauSao(this)"' : 'oninput="gvCoDan(this)"';
         tr.innerHTML = `<td class="oHdong">${btnxoa}</td><td class="text-center"><input type="text" class="form-control text-center oSttGv" value="${bstt}" readonly></td><td><textarea class="form-control oNdGv" placeholder="Nhập nội dung..." rows="1" ${textareaOnInput} onfocus="gvCoDan(this)"></textarea></td><td><input type="text" class="form-control text-center oNgayGv" placeholder="dd/mm/yyyy" onkeyup="gvDinhDangNgay(this, event)"></td><td><select class="form-select text-center oTdoGv" ${dcb}><option value="">--Chọn--</option><option value="Cho vượt tiến độ" ${cv}>Cho vượt tiến độ</option></select></td><td><select class="form-select oNnghanGv" onchange="gvDoiNgn(this)" ${dcb}>${lchon}</select></td><td><textarea class="form-control text-center oGchuGv" placeholder="Ghi chú" rows="1" oninput="gvCoDan(this)" onfocus="gvCoDan(this)"></textarea></td>`;
         
@@ -316,12 +294,19 @@
             const oNguoi = tr.querySelector('.oNnghanGv');
             oNgay.value = "Nhiệm vụ chung";
             oNgay.disabled = true;
-            oNgay.setAttribute('data-star-disabled', 'true');
             oNgay.style.backgroundColor = '#d1e7dd';
             oNguoi.value = "ALL";
             oNguoi.disabled = true;
-            oNguoi.setAttribute('data-star-disabled', 'true');
             oNguoi.style.backgroundColor = '#d1e7dd';
+        }
+        
+        // Nếu chế độ readonly (x và xx), disable tất cả các ô input/select của dòng cũ
+        if (isReadonlyMode && dong) {
+            tr.querySelectorAll('input, select, textarea').forEach(el => {
+                if (el.classList && !el.classList.contains('oSttGv')) {
+                    el.disabled = true;
+                }
+            });
         }
         
         tb.appendChild(tr);
@@ -341,15 +326,17 @@
     }
     
     function gvThemDong() { 
+        // Kiểm tra quyền thêm dòng: nếu là readonly mode nhưng vẫn cho thêm dòng mới (x, xx được thêm)
+        // Nút Thêm dòng vẫn hiển thị, nhưng nếu không cho phép thì ẩn nút
         ddemDong = document.querySelectorAll('#gvThanBang tr').length + 1; 
         gvVeDong(null); 
-        gvApDungQuyen(); // Áp dụng lại quyền cho dòng mới
     }
     
     function gvXoaDong(btn) { 
+        // Chỉ cho xóa khi không ở chế độ readonly (tức quyền xxx)
+        if (window.PGV_GIAO_VIEC_READONLY === true) return;
         btn.closest('tr').remove(); 
         gvDanhLaiStt(); 
-        gvApDungQuyen();
     }
     
     function gvDanhLaiStt() { 
@@ -362,6 +349,9 @@
     }
 
     function gvDoiNgn(ptu) {
+        // Nếu ở chế độ readonly (x, xx) thì không cho thay đổi người nhận
+        if (window.PGV_GIAO_VIEC_READONLY === true) return;
+        
         const dong = ptu.closest('tr'); 
         const ndg = dong.querySelector('.oNdGv').value.trim();
         
@@ -408,6 +398,7 @@
     const sds = document.querySelectorAll('#gvThanBang tr');
     sds.forEach(dong => {
         const ndg = dong.querySelector('.oNdGv').value.trim();
+        // Lấy tất cả các dòng (cả có * và không *) để gửi batch
         if (ndg !== "") {
             dsNviec.push({
                 stt: dong.querySelector('.oSttGv').value,
@@ -429,6 +420,7 @@
 
     gvDatTai(true, "⏳ Đang đồng bộ nhiệm vụ chung...");
 
+    // Gửi batch
     khachApi.gvXulyNviec({ nam: nm, thang: th_htai, nviec: { batch: true, ds: dsNviec } }, function(kq) {
         gvDatTai(false);
         if (kq && kq.ttai === 'tcong') {
