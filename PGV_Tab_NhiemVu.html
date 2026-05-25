@@ -124,6 +124,12 @@ function xulyXoaTepDc(chs) {
 }
 
 function xulyLuuTam(ath = false, xltc = null) {
+    // Kiểm tra quyền: không được lưu nhật ký của người khác nếu không có quyền (chỉ xxx)
+    if (!window.PGV_IS_SELF && !window.PGV_CAN_SAVE_FOR_OTHER) {
+        if (typeof hienThongb === 'function') hienThongb('loi', "Bạn không có quyền lưu nhật ký của người khác.");
+        else alert("Không có quyền");
+        return;
+    }
     const ntl = document.querySelector('button[onclick="xulyLuuTam()"]'); if(ntl && !ath) ntl.disabled = true; if(!ath) hienTaiDl("✨ Đang ghi nhớ kết quả...");
     let dlbg = [];
     $('#bangNviec tbody tr').each(function() {
@@ -146,6 +152,12 @@ function xulyLuuTam(ath = false, xltc = null) {
 }
 
 function nopBcaoChinh() {
+    // Kiểm tra quyền: không được nộp báo cáo của người khác nếu không có quyền (chỉ xxx)
+    if (!window.PGV_IS_SELF && !window.PGV_CAN_SAVE_FOR_OTHER) {
+        if (typeof hienThongb === 'function') hienThongb('loi', "Bạn không có quyền nộp báo cáo của người khác.");
+        else alert("Không có quyền");
+        return;
+    }
     const gn = parseInt($('#nhapSngayNghi').val()) || 0, ld = $('#nhapLdoNghi').val().trim();
     if (gn > 0 && ld === "") { hienThongb('cbh', `Bạn đã có ${gn} ngày nghỉ.\nPhải nhập lý do!`, () => setTimeout(() => $('#nhapLdoNghi').focus(), 500)); return; }
     const yk = $('#nhapYkien').val().trim(), bc = $('#nhapBcao').val().trim();
@@ -172,19 +184,19 @@ function nopBcaoChinh() {
     });
 }
 
-function mokBcao() { mbcMo = true; const nt = document.getElementById('nutNopBcao'); if(nt) { nt.disabled = false; nt.style.transition = "transform 0.2s"; nt.style.transform = "scale(1.1)"; setTimeout(() => nt.style.transform = "scale(1)", 200); } }
-function khaBcao() { if (!mbcMo) { const nt = document.getElementById('nutNopBcao'); if(nt) nt.disabled = true; } }
+function mokBcao() { mbcMo = true; const nt = document.getElementById('nutNopBcao'); if(nt && nt.style.display !== 'none') { nt.disabled = false; nt.style.transition = "transform 0.2s"; nt.style.transform = "scale(1.1)"; setTimeout(() => nt.style.transform = "scale(1)", 200); } }
+function khaBcao() { if (!mbcMo) { const nt = document.getElementById('nutNopBcao'); if(nt && nt.style.display !== 'none') nt.disabled = true; } }
 
 function veBangNviec(db) {
     khaBcao(); const bg = $('#bangNviec tbody').empty();
-    if (!db || db.length === 0) { bg.append('<tr><td colspan="7" class="text-center text-muted py-3 small">Chưa có nhiệm vụ.</td></tr>'); tinhtTdong(); return; }
-    let lq = (typeof canbHientai !== 'undefined' && canbHientai.qchon === true);
+    if (!db || db.length === 0) { bg.append('<tr><td colspan="7" class="text-center text-muted py-3 small">Chưa có nhiệm vụ.2%</td></tr>'); tinhtTdong(); return; }
+    // Lấy trạng thái hiển thị nút Xóa từ biến toàn cục (chỉ xxx mới có)
+    const showDeleteBtn = window.PGV_CAN_SHOW_DELETE_BUTTON === true;
     db.forEach((dong, chs) => {
         let sn = chs + 1; let ndc = dong[1] ? String(dong[1]) : ""; let hc = dong[2] || ""; let ltd = dong[3] || ""; let kqchon = dong[4] || ""; let nht = dong[5]; let ndd = hdNgay(nht); let nttc = hdNgay(hc);
-        let nutx = lq ? `<button class="btn btn-sm btn-danger py-0 px-2" onclick="xoaDongNv(this)" title="Xoá dòng (Quyền Admin)">✕</button>` : ``;
+        let nutx = showDeleteBtn ? `<button class="btn btn-sm btn-danger py-0 px-2" onclick="xoaDongNv(this)" title="Xoá dòng (Quyền Admin)">✕</button>` : ``;
         let dg = `<tr class="dongNv" data-deadline="${nttc}" data-type="${ltd}" data-is-new="false"><td class="text-center align-middle oStt">${sn}</td><td><textarea class="form-control nhapNdung" readonly oninput="cdang(this)" onfocus="cdang(this)" rows="1">${ndc}</textarea></td><td class="text-center align-middle">${nttc}</td><td class="text-center align-middle">${ltd}</td><td class="align-middle"><select class="form-select form-select-sm chonKq shadow-sm" onchange="tinhtTdong()" style="border:none; font-size:13px;"><option value="">-- Chọn --</option><option value="Chất lượng đạt yêu cầu" ${kqchon === 'Chất lượng đạt yêu cầu' ? 'selected' : ''}>Đạt yêu cầu</option><option value="Chất lượng chưa đạt yêu cầu" ${kqchon === 'Chất lượng chưa đạt yêu cầu' ? 'selected' : ''}>Chưa đạt</option></select></td><td class="align-middle"><input type="text" class="form-control form-control-sm nhapNgay shadow-sm text-center" onchange="tinhtTdong()" onkeyup="tinhtTdong()" value="${ndd}" placeholder="dd/mm/yyyy" style="font-size:13px;"></td><td class="text-center align-middle">${nutx}</td></tr>`; bg.append(dg);
     });
-    // Gỡ độ trễ nhân tạo: Giảm timeout từ 300ms xuống 10ms để render DOM tức thì
     setTimeout(() => { $('#bangNviec textarea').each(function() { cdang(this); }); tinhtTdong(); khaBcao(); }, 10);
 }
 
@@ -192,12 +204,21 @@ function cdang(ptu) { ptu.style.height = 'auto'; ptu.style.height = (ptu.scrollH
 
 function addNv() {
     const bg = $('#bangNviec tbody'); if (bg.find('tr td').length === 1 && bg.find('tr td').attr('colspan') == '7') { bg.empty(); } let sn = bg.find('tr.dongNv').length + 1;
-    let dg = `<tr class="dongNv" data-deadline="" data-type="" data-is-new="true"><td class="text-center align-middle oStt">${sn}</td><td><textarea class="form-control nhapNdung" oninput="cdang(this)" rows="1" placeholder="Nhập nội dung..."></textarea></td><td class="align-middle"><input type="text" class="form-control form-control-sm nhapHchot text-center" placeholder="dd/mm/yyyy" onchange="cnDong(this)"></td><td class="align-middle"><input type="text" class="form-control form-control-sm nhapTdo text-center" placeholder="Loại tiến độ..." onchange="cnDong(this)"></td><td class="align-middle"><select class="form-select form-select-sm chonKq shadow-sm" onchange="tinhtTdong()" style="border:none; font-size:13px;"><option value="">-- Chọn --</option><option value="Chất lượng đạt yêu cầu">Đạt yêu cầu</option><option value="Chất lượng chưa đạt yêu cầu">Chưa đạt</option></select></td><td class="align-middle"><input type="text" class="form-control form-control-sm nhapNgay shadow-sm text-center" onchange="tinhtTdong()" onkeyup="tinhtTdong()" value="" placeholder="dd/mm/yyyy" style="font-size:13px;"></td><td class="text-center align-middle"><button class="btn btn-sm btn-danger py-0 px-2" onclick="xoaDongNv(this)" title="Xoá dòng này">✕</button></td></tr>`; bg.append(dg); tinhtTdong(); if(typeof mokBcao === 'function') mokBcao();
+    const showDeleteBtn = window.PGV_CAN_SHOW_DELETE_BUTTON === true;
+    let deleteBtnHtml = showDeleteBtn ? `<button class="btn btn-sm btn-danger py-0 px-2" onclick="xoaDongNv(this)" title="Xoá dòng này">✕</button>` : ``;
+    let dg = `<tr class="dongNv" data-deadline="" data-type="" data-is-new="true"><td class="text-center align-middle oStt">${sn}</td><td><textarea class="form-control nhapNdung" oninput="cdang(this)" rows="1" placeholder="Nhập nội dung..."></textarea></td><td class="align-middle"><input type="text" class="form-control form-control-sm nhapHchot text-center" placeholder="dd/mm/yyyy" onchange="cnDong(this)"></td><td class="align-middle"><input type="text" class="form-control form-control-sm nhapTdo text-center" placeholder="Loại tiến độ..." onchange="cnDong(this)"></td><td class="align-middle"><select class="form-select form-select-sm chonKq shadow-sm" onchange="tinhtTdong()" style="border:none; font-size:13px;"><option value="">-- Chọn --</option><option value="Chất lượng đạt yêu cầu">Đạt yêu cầu</option><option value="Chất lượng chưa đạt yêu cầu">Chưa đạt</option></select></td><td class="align-middle"><input type="text" class="form-control form-control-sm nhapNgay shadow-sm text-center" onchange="tinhtTdong()" onkeyup="tinhtTdong()" value="" placeholder="dd/mm/yyyy" style="font-size:13px;"></td><td class="text-center align-middle">${deleteBtnHtml}</td></tr>`; bg.append(dg); tinhtTdong(); if(typeof mokBcao === 'function') mokBcao();
 }
 
 function cnDong(ptu) { const dr = $(ptu).closest('tr'); dr.attr('data-deadline', dr.find('.nhapHchot').val() || ""); dr.attr('data-type', dr.find('.nhapTdo').val() || ""); tinhtTdong(); }
-function xoaDongNv(nt) { const cbm = "Thầy/Cô có chắc chắn muốn xoá nhiệm vụ này không?\n\nLưu ý: Bấm 'Lưu nhật ký' để đồng bộ."; if (typeof hienThongb === 'function') { hienThongb('xn', cbm, function() { $(nt).closest('tr').remove(); dlStt(); tinhtTdong(); if(typeof mokBcao === 'function') mokBcao(); }); } else { if (confirm(cbm)) { $(nt).closest('tr').remove(); dlStt(); tinhtTdong(); if(typeof mokBcao === 'function') mokBcao(); } } }
-function dlStt() { $('#bangNviec tbody tr.dongNv').each(function(chs) { $(this).find('.oStt').text(chs + 1); }); if ($('#bangNviec tbody tr.dongNv').length === 0) { $('#bangNviec tbody').html('<tr><td colspan=\"7\" class=\"text-center text-muted py-3 small\">Chưa có nhiệm vụ.</td></tr>'); } }
+
+function xoaDongNv(nt) {
+    if (window.PGV_CAN_SHOW_DELETE_BUTTON !== true) return;
+    const cbm = "Thầy/Cô có chắc chắn muốn xoá nhiệm vụ này không?\n\nLưu ý: Bấm 'Lưu nhật ký' để đồng bộ."; 
+    if (typeof hienThongb === 'function') { hienThongb('xn', cbm, function() { $(nt).closest('tr').remove(); dlStt(); tinhtTdong(); if(typeof mokBcao === 'function') mokBcao(); }); } 
+    else { if (confirm(cbm)) { $(nt).closest('tr').remove(); dlStt(); tinhtTdong(); if(typeof mokBcao === 'function') mokBcao(); } }
+}
+
+function dlStt() { $('#bangNviec tbody tr.dongNv').each(function(chs) { $(this).find('.oStt').text(chs + 1); }); if ($('#bangNviec tbody tr.dongNv').length === 0) { $('#bangNviec tbody').html('<tr><td colspan=\"7\" class=\"text-center text-muted py-3 small\">Chưa có nhiệm vụ.2%</td></table>'); } }
 
 function tinhtTdong() {
     const dtc = document.getElementById('nhapDiemThuong'); let dc = dtc ? (parseFloat(dtc.value) || 0) : 0;
