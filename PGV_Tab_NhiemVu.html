@@ -123,7 +123,6 @@ function xulyXoaTepDc(chs) {
     } else { anTaiDl(); hienThongb('loi', "Lỗi API"); }
 }
 
-// ================= HÀM LƯU NHẬT KÝ (CẬP NHẬT QUYỀN) =================
 function xulyLuuTam(ath = false, xltc = null) {
     // Chỉ được lưu nhật ký của người khác nếu quyền là 'xxx'
     if (!window.PGV_IS_SELF && window.PGV_QUYEN !== 'xxx') {
@@ -152,7 +151,6 @@ function xulyLuuTam(ath = false, xltc = null) {
     }, function(loi) { if(!ath) anTaiDl(); if(ntl && !ath) ntl.disabled = false; if (typeof hienThongb === 'function') hienThongb('loi', "Lỗi Server: " + loi.message); else alert("Lỗi Server: " + loi.message); });
 }
 
-// ================= HÀM NỘP BÁO CÁO (CẬP NHẬT QUYỀN) =================
 function nopBcaoChinh() {
     // Chỉ được nộp báo cáo của người khác nếu quyền là 'xxx'
     if (!window.PGV_IS_SELF && window.PGV_QUYEN !== 'xxx') {
@@ -219,7 +217,7 @@ function xoaDongNv(nt) {
     else { if (confirm(cbm)) { $(nt).closest('tr').remove(); dlStt(); tinhtTdong(); if(typeof mokBcao === 'function') mokBcao(); } }
 }
 
-function dlStt() { $('#bangNviec tbody tr.dongNv').each(function(chs) { $(this).find('.oStt').text(chs + 1); }); if ($('#bangNviec tbody tr.dongNv').length === 0) { $('#bangNviec tbody').html('<tr><td colspan=\"7\" class=\"text-center text-muted py-3 small\">Chưa có nhiệm vụ.2%</td></tr>'); } }
+function dlStt() { $('#bangNviec tbody tr.dongNv').each(function(chs) { $(this).find('.oStt').text(chs + 1); }); if ($('#bangNviec tbody tr.dongNv').length === 0) { $('#bangNviec tbody').html('<tr><td colspan=\"7\" class=\"text-center text-muted py-3 small\">Chưa có nhiệm vụ.2%2%</td></tr>'); } }
 
 function tinhtTdong() {
     const dtc = document.getElementById('nhapDiemThuong'); let dc = dtc ? (parseFloat(dtc.value) || 0) : 0;
