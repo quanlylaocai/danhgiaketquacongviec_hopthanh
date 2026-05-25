@@ -135,6 +135,7 @@
         </button>
     </div>
 
+    <!-- THÔNG TIN NHÀ PHÁT TRIỂN -->
     <div class="thong-tin-dev">
         <i class="bi bi-code-slash"></i> 
         <span class="ten-tac-gia" id="dev_author_name_menu">ĐANG TẢI...</span>
@@ -149,6 +150,7 @@
             document.getElementById('dev_author_name_menu').innerText = PGV_TAC_GIA;
         }
         
+        // Hàm kiểm tra hiển thị tab Cấp quyền dựa trên biến window.PGV_SHOW_CAPQUYEN
         window.kiemTraHienThiTabCapQuyen = function() {
             var tabCapQuyen = document.getElementById('tabCapQuyen');
             if (tabCapQuyen) {
@@ -160,7 +162,12 @@
             }
         };
         
+        // Gọi ngay khi script chạy
         window.kiemTraHienThiTabCapQuyen();
-        window.addEventListener('load', function() { window.kiemTraHienThiTabCapQuyen(); });
+        
+        // Lắng nghe sự kiện load để đảm bảo (nếu cần)
+        window.addEventListener('load', function() {
+            window.kiemTraHienThiTabCapQuyen();
+        });
     })();
 </script>
