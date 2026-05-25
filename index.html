@@ -285,7 +285,7 @@
           <div class="tab-pane fade px-4 py-3" id="khuNghi"></div>
           <div class="tab-pane fade px-4 py-3" id="khuYkien"></div>
           <div class="tab-pane fade px-4 py-3" id="khuBaoCao"></div>
-          <div class="tab-pane fade px-4 py-3" id="khuCapQuyen"></div> <!-- Thêm pane cho Cấp quyền -->
+          <div class="tab-pane fade px-4 py-3" id="khuCapQuyen"></div>
         </div>
     </div>
   </div>
@@ -425,26 +425,53 @@
 
       $('#khuNhiemVu *').prop('disabled', false); canbHientai = kq; const hs = $('#hopChonGv');
       
-      // PHÂN QUYỀN: HIỂN THỊ Ô CHỌN GIÁO VIÊN (chỉ với xx hoặc xxx)
-      if (kq.quyen === 'xx' || kq.quyen === 'xxx') {
+      // Xác định đang xem chính mình hay người khác
+      var isSelf = (kq.canb && kq.canb.taik === window.PGV_ID_TC);
+      var quyen = kq.quyen || '';
+      
+      // PHÂN QUYỀN HIỂN THỊ Ô CHỌN GIÁO VIÊN: chỉ xx và xxx
+      if (quyen === 'xx' || quyen === 'xxx') {
           hs.show().prop('disabled', false).removeClass('bg-secondary text-white');
           if (hs.find('option:first').text().includes('Đang tải')) hs.find('option:first').text('-- GV --');
       } else {
           hs.hide();
       }
       
-      // PHÂN QUYỀN: HIỂN THỊ TAB GIAO VIỆC (x, xx, xxx)
-      if (kq.quyen === 'x' || kq.quyen === 'xx' || kq.quyen === 'xxx') {
+      // PHÂN QUYỀN HIỂN THỊ TAB GIAO VIỆC: x, xx, xxx
+      if (quyen === 'x' || quyen === 'xx' || quyen === 'xxx') {
           $('#khuGiaoViec').show();
       } else {
           $('#khuGiaoViec').hide();
       }
       
-      // PHÂN QUYỀN: HIỂN THỊ TAB CẤP QUYỀN (chỉ xxx)
-      window.PGV_SHOW_CAPQUYEN = (kq.quyen === 'xxx');
+      // PHÂN QUYỀN HIỂN THỊ TAB CẤP QUYỀN: chỉ xxx
+      window.PGV_SHOW_CAPQUYEN = (quyen === 'xxx');
       if (typeof kiemTraHienThiTabCapQuyen === 'function') {
           kiemTraHienThiTabCapQuyen();
       }
+      
+      // Quyền chỉnh sửa điểm thưởng: chỉ khi xem chính mình và quyền khác 'x' (tức xx hoặc xxx)
+      var canEditScore = (isSelf && quyen !== 'x');
+      // Quyền lưu nhật ký / nộp báo cáo: nếu là chính mình (bất kỳ quyền) hoặc quyền xxx
+      var canSaveJournal = (isSelf || quyen === 'xxx');
+      // Quyền sử dụng nút "Cập nhật nhiệm vụ chung" (batch): chỉ xxx
+      var canUseBatchUpdate = (quyen === 'xxx');
+      // Quyền sử dụng nút "Chuyển tháng mới": xx và xxx
+      var canUseChuyenThang = (quyen === 'xx' || quyen === 'xxx');
+      // Quyền thêm dòng (nút Thêm dòng trên bảng nhiệm vụ): x, xx, xxx đều có
+      var canAddRow = (quyen === 'x' || quyen === 'xx' || quyen === 'xxx');
+      // Chế độ chỉ đọc cho tab Giao việc (không sửa nội dung đã load): chỉ xxx mới được sửa
+      var giaoViecReadonly = (quyen !== 'xxx');
+      
+      // Lưu các biến quyền vào window để các tab con có thể sử dụng
+      window.PGV_CAN_EDIT_SCORE = canEditScore;
+      window.PGV_CAN_SAVE_JOURNAL = canSaveJournal;
+      window.PGV_CAN_USE_BATCH_UPDATE = canUseBatchUpdate;
+      window.PGV_CAN_USE_CHUYEN_THANG = canUseChuyenThang;
+      window.PGV_CAN_ADD_ROW = canAddRow;
+      window.PGV_GIAO_VIEC_READONLY = giaoViecReadonly;
+      window.PGV_IS_SELF = isSelf;
+      window.PGV_QUYEN = quyen;
       
       try {
         $('#chuTenGv').text(kq.tde.tenn || ''); $('#chuNamHoc').text(kq.tde.nhoc || ''); $('#chuThoiGian').text(kq.tde.tgian || ''); $('#nhapSngayNghi').val(kq.tde.snnghi); $('#nhapDiemThuong').val(parseInt(kq.tde.dthuong) || 0);
@@ -452,9 +479,41 @@
         $('#nhapLdoNghi').val(kq.tde.ldo || ""); $('#nhapYkien').val(kq.tde.kienn || "");
         let thongtbcao = giaiMaBcao(kq.tde.bcao || ""); $('#nhapBcao').val(thongtbcao.chu); window.tepdinhkBcao = thongtbcao.tepdinhk;
         if (typeof veDinhKemBcao === 'function') veDinhKemBcao();
-        if (kq.qsuad) $('#nhapDiemThuong').prop('readonly', false); else $('#nhapDiemThuong').prop('readonly', true);
+        
+        // Điều khiển ô điểm thưởng
+        if (canEditScore) {
+            $('#nhapDiemThuong').prop('readonly', false);
+        } else {
+            $('#nhapDiemThuong').prop('readonly', true);
+        }
+        
+        // Điều khiển các nút lưu, nộp báo cáo
+        if (canSaveJournal) {
+            $('#btnLuuTam, #btnNopBcao').show().prop('disabled', false);
+        } else {
+            $('#btnLuuTam, #btnNopBcao').hide();
+        }
+        
+        // Điều khiển nút thêm dòng (trên bảng nhiệm vụ)
+        if (canAddRow) {
+            $('#btnThemDongNv').show().prop('disabled', false);
+        } else {
+            $('#btnThemDongNv').hide();
+        }
+        
+        // Điều khiển các trường nhập khác (nếu không phải self và không phải xxx thì readonly)
+        if (!isSelf && quyen !== 'xxx') {
+            $('#nhapSngayNghi, #nhapLdoNghi, #nhapYkien, #nhapBcao').prop('readonly', true);
+        } else {
+            $('#nhapSngayNghi, #nhapLdoNghi, #nhapYkien, #nhapBcao').prop('readonly', false);
+        }
+        
         $('#chuTrangThai').text(kq.tde.tthai || 'CHƯA NỘP BÁO CÁO'); $('#chuKqHthi').text(kq.tde.kq || '');
         if(typeof khoiTaoBoDemDiem === 'function') khoiTaoBoDemDiem(kq.tde.kq, kq.tde.dthuong);
+        
+        // Gọi vẽ bảng nhiệm vụ (hàm này sẽ kiểm tra window.PGV_READONLY_MODE nếu có)
+        // Ta set thêm biến window.PGV_READONLY_MODE cho đồng bộ với code cũ
+        window.PGV_READONLY_MODE = !canEditScore && !isSelf; // Tùy chỉnh
         if (typeof veBangNviec === 'function') veBangNviec(kq.bang);
 
         if (!windowDaTienHanhTaiNgam) {
@@ -507,7 +566,7 @@
         }, khiLoiMayChu); 
     }
     
-    // ================= CÁC HÀM TỔNG HỢP ĐÃ ĐƯỢC SỬA LỖI =================
+    // ================= CÁC HÀM TỔNG HỢP (giữ nguyên) =================
     function taiDlThop(amtham = false) { 
         if (!amtham && dataiThop) return; 
         if (!amtham) datTaiDl(true); 
@@ -595,7 +654,7 @@
         const tho = [7, 8, 9, 10, 11, 12, 1, 2, 3, 4, 5, 6]; 
         for (const k in bc) { 
             const gr = bc[k]; 
-            let dr = `<tr><td class="text-center align-middle">${stth++}</td><td class="fw-bold align-middle">${gr.tenn}</td>`; 
+            let dr = `<table><td class="text-center align-middle">${stth++}</td><td class="fw-bold align-middle">${gr.tenn}</td>`; 
             tho.forEach(m => { 
                 let dtb = gr.thangs[m], chuh = '-'; 
                 if (dtb && (dtb.gtri > 0 || (dtb.gtri !== "" && dtb.gtri != null))) { 
@@ -637,7 +696,7 @@
     function khoiTaoBoDemDiem(kqc, dth) { if (!kqc || !/\d+/.test(kqc)) { dlgoc.mauc = ""; return; } let dg = parseInt(kqc.match(/-?\d+/)[0]), bt = parseInt(dth) || 0; dlgoc.diemg = dg - bt; dlgoc.mauc = kqc.replace(String(dg), "{0}"); }
 
     /* ==========================================================================
-       HÀM TRỢ LÝ AI: KHUNG CHAT NOTEBOOK LM BẪY LỖI
+       HÀM TRỢ LÝ AI
        ========================================================================== */
     function dongMoChatAI() { var panel = document.getElementById("aiChatPanel"); if (panel.style.display === "flex") { panel.style.display = "none"; } else { panel.style.display = "flex"; document.getElementById("aiChatInput").focus(); } }
     function xuLyPhimEnterAI(e) { if (e.key === "Enter") { e.preventDefault(); guiCauHoiAI(); } }
