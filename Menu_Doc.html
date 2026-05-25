@@ -128,6 +128,11 @@
             <span class="b-tuong"><i class="bi bi-award"></i></span> Đánh giá cuối năm
         </a>
         
+        <!-- TAB CẤP QUYỀN (chỉ hiển thị khi có quyền xxx) -->
+        <button class="the-chuyen nav-link" id="tabCapQuyen" data-bs-toggle="tab" data-bs-target="#khuCapQuyen" type="button" role="tab" style="display: none;">
+            <span class="b-tuong"><i class="bi bi-shield-lock"></i></span> Cấp quyền
+        </button>
+        
         <button class="the-chuyen mt-auto" onclick="thoatTaik()" style="border-top: 1px dashed rgba(255,255,255,0.3); background: rgba(220,53,69,0.2); color: #fff; font-weight: bold;">
             <span class="b-tuong"><i class="bi bi-box-arrow-right"></i></span> Đăng xuất
         </button>
@@ -147,5 +152,25 @@
         if (typeof PGV_TAC_GIA !== 'undefined' && document.getElementById('dev_author_name_menu')) {
             document.getElementById('dev_author_name_menu').innerText = PGV_TAC_GIA;
         }
+        
+        // Hàm kiểm tra hiển thị tab Cấp quyền dựa trên biến window.PGV_SHOW_CAPQUYEN
+        window.kiemTraHienThiTabCapQuyen = function() {
+            var tabCapQuyen = document.getElementById('tabCapQuyen');
+            if (tabCapQuyen) {
+                if (window.PGV_SHOW_CAPQUYEN === true) {
+                    tabCapQuyen.style.display = 'flex';
+                } else {
+                    tabCapQuyen.style.display = 'none';
+                }
+            }
+        };
+        
+        // Gọi ngay khi script chạy
+        window.kiemTraHienThiTabCapQuyen();
+        
+        // Lắng nghe sự kiện load để đảm bảo (nếu cần)
+        window.addEventListener('load', function() {
+            window.kiemTraHienThiTabCapQuyen();
+        });
     })();
 </script>
