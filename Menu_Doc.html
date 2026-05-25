@@ -54,6 +54,27 @@
         font-weight: bold; border-left: 4px solid #ffc107; padding-left: 16px;
     }
     .b-tuong { margin-right: 12px; font-size: 18px; display: inline-block; width: 24px; text-align: center;}
+    
+    /* Thông tin nhà phát triển ở cuối menu */
+    .thong-tin-dev {
+        margin-top: auto;
+        padding: 12px 20px;
+        border-top: 1px solid rgba(255,255,255,0.2);
+        font-size: 12px;
+        text-align: center;
+        color: rgba(255,255,255,0.8);
+        background-color: rgba(0,0,0,0.1);
+        width: 100%;
+        box-sizing: border-box;
+    }
+    .thong-tin-dev i {
+        font-size: 14px;
+        margin-right: 4px;
+    }
+    .ten-tac-gia {
+        font-weight: bold;
+        color: #ffeb3b;
+    }
 </style>
 
 <div class="khung-trai">
@@ -111,4 +132,20 @@
             <span class="b-tuong"><i class="bi bi-box-arrow-right"></i></span> Đăng xuất
         </button>
     </div>
+
+    <!-- THÔNG TIN NHÀ PHÁT TRIỂN ĐƯỢC THÊM VÀO CUỐI MENU -->
+    <div class="thong-tin-dev">
+        <i class="bi bi-code-slash"></i> 
+        <span class="ten-tac-gia" id="dev_author_name_menu">ĐANG TẢI...</span>
+        <br><small>System Developer</small>
+    </div>
 </div>
+
+<script>
+    // Cập nhật tên tác giả từ biến toàn cục PGV_TAC_GIA (nếu có)
+    (function() {
+        if (typeof PGV_TAC_GIA !== 'undefined' && document.getElementById('dev_author_name_menu')) {
+            document.getElementById('dev_author_name_menu').innerText = PGV_TAC_GIA;
+        }
+    })();
+</script>
