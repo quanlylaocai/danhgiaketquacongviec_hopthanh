@@ -9,7 +9,6 @@
   #khuGvChinh th { background-color: #0d6efd; color: white; text-align: center; padding: 8px 4px; border: 1px solid #dee2e6; vertical-align: middle; font-size: 13px; }
   #khuGvChinh td { border: 1px solid #999; padding: 0 !important; vertical-align: top; }
   
-  /* TEXTAREA - KHÔNG GIỚI HẠN CHIỀU CAO */
   #gvBangNv textarea.form-control {
     font-family: 'Times New Roman', Times, serif;
     font-size: 14px;
@@ -28,11 +27,6 @@
     white-space: pre-wrap;
     word-wrap: break-word;
     box-sizing: border-box;
-  }
-  
-  #gvBangNv textarea.form-control:read-only {
-    background-color: #f8f9f8;
-    cursor: pointer;
   }
   
   #gvBangNv input.form-control, #gvBangNv select.form-select { font-family: 'Times New Roman', Times, serif; font-size: 14px; border: none !important; box-shadow: none !important; width: 100%; height: 100%; padding: 4px; background-color: transparent; }
@@ -87,12 +81,10 @@
     let tdtaiXoaCho = null; 
     let ptuChoXoa = null;
 
-    // RESIZE TEXTAREA - TÍNH TOÁN LẠI CHIỀU CAO DỰA TRÊN NỘI DUNG
+    // RESIZE TEXTAREA - GIÃN ĐỘ CAO VỪA VỚI NỘI DUNG
     function gvResizeTextarea(tx) {
         if (!tx) return;
-        // Lưu nội dung hiện tại (không cần thiết nhưng để debug)
         tx.style.height = 'auto';
-        // Force reflow
         void tx.offsetHeight;
         var newHeight = tx.scrollHeight;
         if (newHeight < 35) newHeight = 35;
@@ -100,51 +92,58 @@
     }
 
     function gvResizeAllTextareas() {
-        document.querySelectorAll('#gvBangNv textarea.form-control').forEach(function(tx) {
-            gvResizeTextarea(tx);
-        });
+        document.querySelectorAll('#gvBangNv textarea.form-control').forEach(gvResizeTextarea);
     }
 
-    // GẮN SỰ KIỆN DI CHUỘT VÀ FOCUS ĐỂ KÍCH HOẠT RESIZE (kể cả readonly)
-    function gvAttachResizeEvents() {
-        document.querySelectorAll('#gvBangNv textarea.form-control').forEach(function(tx) {
-            if (!tx.hasResizeEvent) {
-                tx.hasResizeEvent = true;
-                // Khi di chuột vào (mouseenter) thì resize
-                tx.addEventListener('mouseenter', function() {
-                    gvResizeTextarea(this);
-                });
-                // Khi focus (click vào) cũng resize
-                tx.addEventListener('focus', function() {
-                    gvResizeTextarea(this);
-                });
-                // Nếu là dòng mới (không readonly) thì giữ sự kiện oninput
-                if (!tx.readOnly) {
-                    tx.addEventListener('input', function() {
-                        gvResizeTextarea(this);
-                    });
-                }
+    // KHÓA CHỈNH SỬA CHO TEXTAREA CÓ QUYỀN READONLY (nhưng vẫn giữ sự kiện click)
+    function gvSetReadonlyBehavior(textarea, isReadonly) {
+        if (isReadonly) {
+            textarea.readOnly = false;  // Quan trọng: bỏ readonly để scrollHeight hoạt động
+            textarea.style.cursor = 'pointer';
+            textarea.style.backgroundColor = '#f8f9f8';
+            // Chặn mọi thao tác sửa nội dung
+            textarea.addEventListener('keydown', function(e) { e.preventDefault(); return false; });
+            textarea.addEventListener('paste', function(e) { e.preventDefault(); return false; });
+            textarea.addEventListener('drop', function(e) { e.preventDefault(); return false; });
+            textarea.addEventListener('input', function(e) { e.preventDefault(); return false; });
+        } else {
+            textarea.readOnly = false;
+            textarea.style.cursor = 'text';
+            textarea.style.backgroundColor = 'transparent';
+            textarea.removeEventListener('keydown', gvPreventEdit);
+            textarea.removeEventListener('paste', gvPreventEdit);
+            textarea.removeEventListener('drop', gvPreventEdit);
+            textarea.removeEventListener('input', gvPreventEdit);
+        }
+    }
+    
+    function gvPreventEdit(e) { e.preventDefault(); return false; }
+
+    // GẮN SỰ KIỆN RESIZE KHI CLICK, FOCUS, MOUSEENTER
+    function gvAttachEvents(textarea) {
+        if (!textarea.hasEvents) {
+            textarea.hasEvents = true;
+            textarea.addEventListener('click', function() { setTimeout(() => gvResizeTextarea(textarea), 10); });
+            textarea.addEventListener('focus', function() { setTimeout(() => gvResizeTextarea(textarea), 10); });
+            textarea.addEventListener('mouseenter', function() { setTimeout(() => gvResizeTextarea(textarea), 10); });
+            if (!textarea.readOnlyLocked) {
+                textarea.addEventListener('input', function() { gvResizeTextarea(textarea); });
             }
-        });
+        }
+    }
+
+    function gvAttachAllEvents() {
+        document.querySelectorAll('#gvBangNv textarea.form-control').forEach(gvAttachEvents);
     }
 
     // Hàm áp dụng quyền cho giao diện
     function apDungQuyenGiaoViec() {
-        if (window.PGV_SHOW_CHUYEN_THANG === true) {
-            $('#gvNutChth').show();
-        } else {
-            $('#gvNutChth').hide();
-        }
-        if (window.PGV_SHOW_BATCH_UPDATE === true) {
-            $('#btnCapNhatChung').show();
-        } else {
-            $('#btnCapNhatChung').hide();
-        }
-        if (window.PGV_YEAR_MONTH_READONLY === true) {
-            $('#gvLocNam, #gvLocThang').prop('disabled', true).addClass('readonly-bg');
-        } else {
-            $('#gvLocNam, #gvLocThang').prop('disabled', false).removeClass('readonly-bg');
-        }
+        if (window.PGV_SHOW_CHUYEN_THANG === true) $('#gvNutChth').show();
+        else $('#gvNutChth').hide();
+        if (window.PGV_SHOW_BATCH_UPDATE === true) $('#btnCapNhatChung').show();
+        else $('#btnCapNhatChung').hide();
+        if (window.PGV_YEAR_MONTH_READONLY === true) $('#gvLocNam, #gvLocThang').prop('disabled', true).addClass('readonly-bg');
+        else $('#gvLocNam, #gvLocThang').prop('disabled', false).removeClass('readonly-bg');
         $('.nutThem').show();
     }
 
@@ -156,30 +155,13 @@
         const td = document.getElementById('gvTdeHtTb');
         const ct = document.getElementById('gvNdHtTb');
         const bg = document.getElementById('gvBtuongHtTb');
-        
         hd.classList.remove('bg-success', 'bg-danger', 'bg-warning', 'text-dark', 'text-white'); 
         ct.innerText = tb;
-        
-        if (loai === 'tcong') { 
-            hd.classList.add('bg-success', 'text-white'); 
-            td.innerText = "THÀNH CÔNG"; 
-            bg.innerHTML = '<i class="bi bi-check-circle-fill text-success"></i>'; 
-        } else if (loai === 'loi') { 
-            hd.classList.add('bg-danger', 'text-white'); 
-            td.innerText = "LỖI"; 
-            bg.innerHTML = '<i class="bi bi-x-circle-fill text-danger"></i>'; 
-        } else if (loai === 'cbh') { 
-            hd.classList.add('bg-warning', 'text-dark'); 
-            td.innerText = "CẢNH BÁO"; 
-            bg.innerHTML = '<i class="bi bi-exclamation-triangle-fill text-warning"></i>'; 
-            hd.classList.remove('text-white'); 
-        } else { 
-            hd.classList.add('bg-primary', 'text-white'); 
-            td.innerText = "THÔNG BÁO"; 
-            bg.innerHTML = '<i class="bi bi-info-circle-fill text-primary"></i>'; 
-        }
-        const hm = new bootstrap.Modal(mh); 
-        hm.show();
+        if (loai === 'tcong') { hd.classList.add('bg-success', 'text-white'); td.innerText = "THÀNH CÔNG"; bg.innerHTML = '<i class="bi bi-check-circle-fill text-success"></i>'; }
+        else if (loai === 'loi') { hd.classList.add('bg-danger', 'text-white'); td.innerText = "LỖI"; bg.innerHTML = '<i class="bi bi-x-circle-fill text-danger"></i>'; }
+        else if (loai === 'cbh') { hd.classList.add('bg-warning', 'text-dark'); td.innerText = "CẢNH BÁO"; bg.innerHTML = '<i class="bi bi-exclamation-triangle-fill text-warning"></i>'; hd.classList.remove('text-white'); }
+        else { hd.classList.add('bg-primary', 'text-white'); td.innerText = "THÔNG BÁO"; bg.innerHTML = '<i class="bi bi-info-circle-fill text-primary"></i>'; }
+        const hm = new bootstrap.Modal(mh); hm.show();
     }
 
     function gvDatTai(dt, tbt) {
@@ -196,9 +178,7 @@
                 vq.className = "spinner-border text-primary spinner-border-lg"; 
             } 
             mh.style.display = 'flex'; 
-        } else { 
-            mh.style.display = 'none'; 
-        }
+        } else { mh.style.display = 'none'; }
     }
 
     function gvTaiCanb() { 
@@ -218,23 +198,17 @@
         gvDatTai(false); 
         if(dl.nam) document.getElementById('gvLocNam').value = dl.nam; 
         if(dl.thang) document.getElementById('gvLocThang').value = dl.thang;
-        
         const bns = dl.dlbang;
         const tb = document.getElementById('gvThanBang'); 
-        tb.innerHTML = ""; 
-        ddemDong = 1; 
-        
+        tb.innerHTML = ""; ddemDong = 1; 
         if (bns && bns.length > 0) { 
             bns.forEach(dong => { gvVeDong(dong); }); 
-            const dcstt = parseInt(bns[bns.length - 1][0]); 
-            if (!isNaN(dcstt)) ddemDong = dcstt + 1; 
+            const dcstt = parseInt(bns[bns.length - 1][0]); if (!isNaN(dcstt)) ddemDong = dcstt + 1; 
             setTimeout(() => { 
                 gvResizeAllTextareas();
-                gvAttachResizeEvents();
+                gvAttachAllEvents();
             }, 150); 
-        } else { 
-            gvVeDong(); 
-        }
+        } else { gvVeDong(); }
         apDungQuyenGiaoViec();
     }
 
@@ -244,7 +218,6 @@
         const oNgayGv = dong.querySelector('.oNgayGv');
         const oNnghanGv = dong.querySelector('.oNnghanGv');
         const isNewRow = dong.getAttribute('data-is-new') === 'true';
-        
         if (ndung.startsWith("*")) {
             if (oNgayGv.value !== "Nhiệm vụ chung") {
                 oNgayGv.value = "Nhiệm vụ chung";
@@ -270,92 +243,59 @@
                 }
             }
         }
-        setTimeout(function() { gvResizeTextarea(textarea); }, 20);
+        setTimeout(() => gvResizeTextarea(textarea), 20);
     }
 
     function gvVeDong(dong = null) {
         const tb = document.getElementById('gvThanBang');
         const tr = document.createElement('tr');
-        
         let ngnth = (dong && dong[4]) ? dong[4] : "";
         let ngnthH = ngnth.toUpperCase();
         const isReadonlyMode = (window.PGV_GIAO_VIEC_READONLY === true);
         let dcb = (dong && (ngnth !== "" || isReadonlyMode)) ? "readonly" : "";
-        
         let btnxoa = dong ? `<i class="bi bi-lock-fill text-secondary" title="Đã lưu, không thể xoá"></i>` : `<button class="btn btn-danger btn-sm p-0" style="width:24px; height:24px; line-height:20px;" onclick="gvXoaDong(this)">X</button>`;
         if (isReadonlyMode && dong) btnxoa = `<i class="bi bi-lock-fill text-secondary" title="Không thể xóa"></i>`;
-        
         let lchon = `<option value="">--Chọn--</option>`;
-        if (!dcb || ngnthH === 'ALL' || ngnthH === '-TOÀN TRƯỜNG-') { 
-            let tchon = (ngnthH === 'ALL' || ngnthH === '-TOÀN TRƯỜNG-') ? "selected" : ""; 
-            lchon += `<option value="ALL" style="font-weight:bold; color:blue;" ${tchon}>-TOÀN TRƯỜNG-</option>`; 
-        }
-        dsCanbgv.forEach(s => { 
-            let chon = (ngnth === s.ttrg || ngnth === s.tenn) ? "selected" : ""; 
-            lchon += `<option value="${s.ttrg}" data-name="${s.tenn}" ${chon}>${s.tenn}</option>`; 
-        });
-        
+        if (!dcb || ngnthH === 'ALL' || ngnthH === '-TOÀN TRƯỜNG-') { let tchon = (ngnthH === 'ALL' || ngnthH === '-TOÀN TRƯỜNG-') ? "selected" : ""; lchon += `<option value="ALL" style="font-weight:bold; color:blue;" ${tchon}>-TOÀN TRƯỜNG-</option>`; }
+        dsCanbgv.forEach(s => { let chon = (ngnth === s.ttrg || ngnth === s.tenn) ? "selected" : ""; lchon += `<option value="${s.ttrg}" data-name="${s.tenn}" ${chon}>${s.tenn}</option>`; });
         let bstt = ddemDong, bnd = "", bhc = "", bltd = "", bgc = "";
-        if (dong) { 
-            bstt = dong[0]; 
-            bnd = dong[1] || ""; 
-            bhc = dong[2] || ""; 
-            bltd = dong[3] || ""; 
-            bgc = dong[5] || ""; 
-            ddemDong = parseInt(bstt) + 1; 
-        } else { ddemDong++; }
-        
+        if (dong) { bstt = dong[0]; bnd = dong[1] || ""; bhc = dong[2] || ""; bltd = dong[3] || ""; bgc = dong[5] || ""; ddemDong = parseInt(bstt) + 1; } else { ddemDong++; }
         const cv = (bltd === "Cho vượt tiến độ") ? "selected" : "";
         let textareaOnInput = dong === null ? 'oninput="gvCoDan(this); gvKiemTraDauSao(this)"' : 'oninput="gvCoDan(this); gvKiemTraDauSao(this)"';
         tr.innerHTML = `<td class="oHdong text-center">${btnxoa}</td>
                         <td class="text-center"><input type="text" class="form-control text-center oSttGv" value="${bstt}" readonly style="width:40px;"></td>
                         <td style="padding:0 !important;"><textarea class="form-control oNdGv" placeholder="Nhập nội dung..." rows="1" ${textareaOnInput} onfocus="gvCoDan(this)"></textarea></td>
                         <td class="text-center"><input type="text" class="form-control text-center oNgayGv" placeholder="dd/mm/yyyy" onkeyup="gvDinhDangNgay(this, event)"></td>
-                        <td class="text-center"><select class="form-select text-center oTdoGv" ${dcb} ${dcb ? 'disabled' : ''}><option value="">--Chọn--</option><option value="Cho vượt tiến độ" ${cv}>Cho vượt tiến độ</option></select></td>
-                        <td><select class="form-select oNnghanGv" onchange="gvDoiNgn(this)" ${dcb} ${dcb ? 'disabled' : ''}>${lchon}</select></td>
+                        <td class="text-center"><select class="form-select text-center oTdoGv" ${dcb ? 'disabled' : ''}><option value="">--Chọn--</option><option value="Cho vượt tiến độ" ${cv}>Cho vượt tiến độ</option></select></td>
+                        <td><select class="form-select oNnghanGv" onchange="gvDoiNgn(this)" ${dcb ? 'disabled' : ''}>${lchon}</select></td>
                         <td><textarea class="form-control text-center oGchuGv" placeholder="Ghi chú" rows="1" oninput="gvCoDan(this)" onfocus="gvCoDan(this)"></textarea></td>`;
-        
         tr.querySelector('.oNdGv').value = bnd;
         tr.querySelector('.oNgayGv').value = bhc;
         tr.querySelector('.oTdoGv').value = bltd;
         tr.querySelector('.oGchuGv').value = bgc;
-        
         if (dong && bnd.trim().startsWith("*")) {
             const oNgay = tr.querySelector('.oNgayGv');
             const oNguoi = tr.querySelector('.oNnghanGv');
-            oNgay.value = "Nhiệm vụ chung";
-            oNgay.disabled = true;
-            oNgay.style.backgroundColor = '#d1e7dd';
-            oNguoi.value = "ALL";
-            oNguoi.disabled = true;
-            oNguoi.style.backgroundColor = '#d1e7dd';
+            oNgay.value = "Nhiệm vụ chung"; oNgay.disabled = true; oNgay.style.backgroundColor = '#d1e7dd';
+            oNguoi.value = "ALL"; oNguoi.disabled = true; oNguoi.style.backgroundColor = '#d1e7dd';
         }
-        
-        if (isReadonlyMode && dong) {
-            tr.querySelectorAll('input, select, textarea').forEach(el => {
-                if (el.classList && !el.classList.contains('oSttGv')) {
-                    el.setAttribute('readonly', true);
-                    if (el.tagName === 'SELECT') el.disabled = true;
-                }
-            });
-        }
-        
         tb.appendChild(tr);
-        
         const txtArea = tr.querySelector('.oNdGv');
         if (txtArea) {
-            // Gắn sự kiện resize cho textarea mới
-            txtArea.addEventListener('mouseenter', function() { gvResizeTextarea(txtArea); });
-            txtArea.addEventListener('focus', function() { gvResizeTextarea(txtArea); });
-            if (!txtArea.readOnly) {
-                txtArea.addEventListener('input', function() { gvResizeTextarea(txtArea); });
+            // Áp dụng khóa chỉnh sửa (nếu cần) nhưng vẫn giữ sự kiện
+            if (isReadonlyMode && dong) {
+                gvSetReadonlyBehavior(txtArea, true);
+            } else if (!dong) {
+                // Dòng mới: quyền x,xx vẫn được thêm và sửa (theo yêu cầu)
+                txtArea.readOnly = false;
             }
-            setTimeout(function() { gvResizeTextarea(txtArea); }, 50);
+            gvAttachEvents(txtArea);
+            setTimeout(() => gvResizeTextarea(txtArea), 50);
         }
     }
     
     function gvCoDan(ptu) { 
-        if (!ptu.readOnly) {
+        if (!ptu.readOnlyLocked) {
             ptu.style.height = 'auto'; 
             ptu.style.height = (ptu.scrollHeight) + 'px'; 
         }
@@ -372,20 +312,19 @@
     function gvThemDong() { 
         ddemDong = document.querySelectorAll('#gvThanBang tr').length + 1; 
         gvVeDong(null); 
-        setTimeout(() => { gvResizeAllTextareas(); gvAttachResizeEvents(); }, 100);
+        setTimeout(() => { gvResizeAllTextareas(); gvAttachAllEvents(); }, 100);
     }
     
     function gvXoaDong(btn) { 
         if (window.PGV_GIAO_VIEC_READONLY === true) return;
         btn.closest('tr').remove(); 
         gvDanhLaiStt(); 
-        setTimeout(() => { gvResizeAllTextareas(); gvAttachResizeEvents(); }, 100);
+        setTimeout(() => { gvResizeAllTextareas(); gvAttachAllEvents(); }, 100);
     }
     
     function gvDanhLaiStt() { 
         const sds = document.querySelectorAll('#gvThanBang tr'); 
-        let tb = 1; 
-        sds.forEach(d => { d.querySelector('.oSttGv').value = tb++; }); 
+        let tb = 1; sds.forEach(d => { d.querySelector('.oSttGv').value = tb++; }); 
         ddemDong = tb; 
     }
 
@@ -473,7 +412,7 @@
                 ptu.style.backgroundColor = '#d1e7dd'; 
                 ptu.style.borderColor = '#badbcc'; 
                 ptu.style.fontWeight = 'bold'; 
-                if (hth === 'DELETE') { tdtaiXoaCho = null; ptuChoXoa = null; setTimeout(gvLaydlGoc(), 1000); } 
+                if (hth === 'DELETE') { tdtaiXoaCho = null; ptuChoXoa = null; setTimeout(gvLaydlGoc, 1000); } 
             } else { 
                 gvTbaoNhanh('loi', "Lỗi Server: " + (kq ? kq.tbao : "Unkown")); 
                 if (ptu.tagName !== 'BUTTON') ptu.value = ""; 
