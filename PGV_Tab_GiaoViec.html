@@ -29,9 +29,13 @@
       </div>
       <div class="hopLoc">
         <button id="gvNutChth" class="btn btn-danger btn-sm fw-bold nhapTuyChinh" style="color: white; border: none; padding: 4px 10px; display: flex; align-items: center;" onclick="gvXlmChth(this)">Chuyển tháng mới</button>
-        <!-- Ô năm học bị khóa, không cho chọn -->
-        <select id="gvLocNam" class="form-select nhapTuyChinh" style="width: 140px;" disabled>
-          <option value="2024-2025">2024-2025</option><option value="2025-2026" selected>2025-2026</option><option value="2026-2027">2026-2027</option>
+        <select id="gvLocNam" class="form-select nhapTuyChinh" style="width: 140px;">
+          <option value="2024-2025">2024-2025</option>
+          <option value="2025-2026" selected>2025-2026</option>
+          <option value="2026-2027">2026-2027</option>
+           <option value="2027-2028">2027-2028</option>
+           <option value="2028-2029">2028-2029</option>
+           <option value="2029-2030">2029-2030</option>
         </select>
         <select id="gvLocThang" class="form-select nhapTuyChinh" style="width: 120px;">
           <option value="Tháng 1">Tháng 1</option><option value="Tháng 2">Tháng 2</option><option value="Tháng 3">Tháng 3</option><option value="Tháng 4">Tháng 4</option>
@@ -63,10 +67,6 @@
     let ddemDong = 1; 
     let tdtaiXoaCho = null; 
     let ptuChoXoa = null;
-
-    // Khởi tạo: lấy năm học dự phòng từ localStorage (nếu có)
-    let namMacDinh = localStorage.getItem('gv_nam_hoc') || '2025-2026';
-    document.getElementById('gvLocNam').value = namMacDinh;
 
     setTimeout(function() { 
         gvTaiCanb(); 
@@ -152,31 +152,7 @@
 
     function gvKhiTaiXong(dl) {
         gvDatTai(false); 
-        
-        // Xử lý năm học từ backend
-        let namValue = dl.nam;
-        console.log("[DEBUG] Năm học từ backend:", namValue);
-        
-        if (!namValue || namValue.trim() === "") {
-            console.warn("⚠️ Năm học từ backend bị rỗng. Kiểm tra KHAIBAO!B2 hoặc GIAOVIEC!C7.");
-            // Thử lấy từ localStorage (đã được lưu từ các lần giao việc trước)
-            let localNam = localStorage.getItem('gv_nam_hoc');
-            if (localNam && localNam.trim() !== "") {
-                document.getElementById('gvLocNam').value = localNam;
-                console.log("Đã khôi phục năm học từ localStorage:", localNam);
-                gvTbaoNhanh('cbh', "Năm học được khôi phục từ bộ nhớ tạm. Vui lòng kiểm tra lại ô B2 sheet KHAIBAO để đồng bộ chính xác.");
-            } else {
-                // Giữ nguyên giá trị mặc định đã set ban đầu (2025-2026)
-                console.log("Giữ nguyên năm học mặc định:", document.getElementById('gvLocNam').value);
-                gvTbaoNhanh('cbh', "Không nhận được năm học từ hệ thống. Đang sử dụng năm mặc định. Vui lòng kiểm tra ô B2 sheet KHAIBAO.");
-            }
-        } else {
-            document.getElementById('gvLocNam').value = namValue;
-            // Lưu vào localStorage để dùng cho các lần sau nếu backend lại bị lỗi
-            localStorage.setItem('gv_nam_hoc', namValue);
-            console.log("Đã cập nhật năm học từ backend:", namValue);
-        }
-        
+        if(dl.nam) document.getElementById('gvLocNam').value = dl.nam; 
         if(dl.thang) document.getElementById('gvLocThang').value = dl.thang;
         
         const bns = dl.dlbang;
@@ -194,6 +170,7 @@
             } 
             setTimeout(() => { 
                 document.querySelectorAll('#khuGvChinh textarea.form-control').forEach(ptu => gvCoDan(ptu)); 
+                // === THÊM TÍNH NĂNG KHÓA CỘT THỜI GIAN HT VÀ NGƯỜI THỰC HIỆN KHI LOAD DỮ LIỆU ===
                 const isReadonlyMode = (window.PGV_GIAO_VIEC_READONLY === true);
                 if (isReadonlyMode) {
                     document.querySelectorAll('#gvBangNv input.oNgayGv').forEach(inp => inp.readOnly = true);
@@ -204,38 +181,12 @@
             gvVeDong(); 
         }
 
-        // ========== THUẬT TOÁN ĐIỀU KHIỂN NÚT DỰA TRÊN QUYỀN (CỘT E) ==========
-        let quyen = '';
-        if (typeof canbHientai !== 'undefined' && canbHientai.quyen) {
-            quyen = canbHientai.quyen;
-        } else if (window.PGV_COT_E) {
-            quyen = window.PGV_COT_E;
+        if (typeof canbHientai !== 'undefined' && canbHientai.qchon === true) {
+            const btnChung = document.getElementById('btnCapNhatChung');
+            if (btnChung) btnChung.style.display = 'inline-block';
         }
-        
-        const btnChung = document.getElementById('btnCapNhatChung');
-        const btnChuyenThang = document.getElementById('gvNutChth');
-        const isAdmin = (typeof canbHientai !== 'undefined' && canbHientai.qchon === true);
-
-        if (quyen === 'x') {
-            if (btnChung) btnChung.style.display = 'none';
-            if (btnChuyenThang) btnChuyenThang.style.display = 'none';
-        } 
-        else if (quyen === 'xx') {
-            if (btnChung) btnChung.style.display = 'none';
-            if (btnChuyenThang) btnChuyenThang.style.display = 'flex';
-        }
-        else {
-            if (btnChung) {
-                btnChung.style.display = isAdmin ? 'inline-block' : 'none';
-            }
-            if (btnChuyenThang) {
-                btnChuyenThang.style.display = isAdmin ? 'flex' : 'none';
-            }
-        }
-        console.log("[GiaoViec] quyen =", quyen, "| isAdmin =", isAdmin);
     }
 
-    // ================= CÁC HÀM XỬ LÝ BẢNG (GIỮ NGUYÊN) =================
     function gvVeDong(dong = null) {
         const tb = document.getElementById('gvThanBang');
         const tr = document.createElement('tr');
@@ -327,6 +278,7 @@
         if (!gt) return; 
         
         const gth = gt.toUpperCase();
+
         const nm = document.getElementById('gvLocNam').value; 
         
         let tngn = ""; 
@@ -401,6 +353,7 @@
                 gvTbaoNhanh('loi', "Lỗi kết nối: " + l.message);
             });
         }
+        
         ghiTungDong(0);
     }
 
@@ -408,6 +361,7 @@
         const nm = document.getElementById('gvLocNam').value;
         const oThang = document.getElementById('gvLocThang');
         const vtThang = oThang.selectedIndex;
+        
         const thangCu = oThang.value;
         if (vtThang < oThang.options.length - 1) {
             oThang.selectedIndex = vtThang + 1;
@@ -415,6 +369,7 @@
             oThang.selectedIndex = 0; 
         }
         const thangMoi = oThang.value;
+
         const nvx = { 
             stt: "0", 
             ndung: "Chuyển tháng", 
@@ -425,6 +380,7 @@
             trangngnhan: "DELETE", 
             tenngnhan: "DELETE" 
         };
+
         tdtaiXoaCho = { nam: nm, thang: thangMoi, nviec: nvx, thangCu: thangCu }; 
         ptuChoXoa = btn; 
         const hmc = new bootstrap.Modal(document.getElementById('gvHopThoaiXoa')); 
@@ -435,6 +391,7 @@
         const hmc = document.getElementById('gvHopThoaiXoa');
         const modal = bootstrap.Modal.getInstance(hmc); 
         modal.hide(); 
+        
         if (tdtaiXoaCho && ptuChoXoa) { 
             const { nam, thang, nviec } = tdtaiXoaCho; 
             gvDatTai(true, `🧹 Đang làm sạch dữ liệu và cập nhật nội dung sang ${thang}`); 
@@ -461,9 +418,7 @@
                 if (kq && kq.ttai === 'tcong') { 
                     ptu.style.backgroundColor = '#d1e7dd'; 
                     ptu.style.borderColor = '#badbcc'; 
-                    ptu.style.fontWeight = 'bold';
-                    // Sau khi giao việc thành công, lưu năm học vào localStorage
-                    localStorage.setItem('gv_nam_hoc', n);
+                    ptu.style.fontWeight = 'bold'; 
                     if (hth === 'DELETE') { 
                         tdtaiXoaCho = null; 
                         ptuChoXoa = null; 
