@@ -192,17 +192,8 @@
             if (btnChuyenThang) btnChuyenThang.style.display = 'none';
         } 
         else if (cotE === 'xx') {
-            // Ẩn nút cập nhật chung, hiện nút chuyển tháng
-            if (btnChung) {
-                btnChung.style.display = 'none';
-                // Đảm bảo chắc chắn ẩn bằng cách set inline style
-                btnChung.setAttribute('style', 'display: none !important;');
-            }
-            if (btnChuyenThang) {
-                btnChuyenThang.style.display = 'flex';
-                btnChuyenThang.removeAttribute('style'); // xóa any previous inline
-                btnChuyenThang.style.display = 'flex';
-            }
+             if (btnChung) btnChung.style.display = 'none';
+            if (btnChuyenThang) btnChuyenThang.style.display = 'flex';
         }
         else {
             // Mặc định: hiển thị theo quyền admin
