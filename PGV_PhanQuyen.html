@@ -281,7 +281,7 @@
             if (!tbody) return;
             tbody.innerHTML = '';
             if (currentList.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" class="text-center">Chưa có dữ liệu. Nhấn "Thêm mới" để tạo.2%</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center">Chưa có dữ liệu. Nhấn "Thêm mới" để tạo.2%</tr></tr>';
                 return;
             }
             for (var i = 0; i < currentList.length; i++) {
@@ -453,6 +453,16 @@
             return true;
         }
         
+        // Hàm kiểm tra sự tồn tại của ít nhất một quyền xxx (admin cao cấp)
+        function kiemTraCoAdminCapCao() {
+            for (var i = 0; i < currentList.length; i++) {
+                if (currentList[i].quyen === 'xxx') {
+                    return true;
+                }
+            }
+            return false;
+        }
+        
         async function luuDuLieu() {
             var namInput = $('#namHocInput');
             var namMoi = namInput ? namInput.value.trim() : '';
@@ -460,6 +470,13 @@
                 alert('⚠️ Vui lòng nhập Năm học trước khi cập nhật.');
                 return;
             }
+            
+            // KIỂM TRA: bắt buộc có ít nhất một quyền xxx (admin cao cấp)
+            if (!kiemTraCoAdminCapCao()) {
+                alert('⚠️ LỖI: Danh sách phải có ít nhất một người có quyền Quản trị cao cấp (xxx).\nVui lòng thêm hoặc sửa quyền cho một tài khoản.');
+                return;
+            }
+            
             // Cập nhật năm học lên sheet GIAOVIEC
             try {
                 await capNhatNamHoc(namMoi, currentThang);
