@@ -17,37 +17,6 @@
         justify-content: space-between;
         align-items: center;
         flex-wrap: wrap;
-        gap: 10px;
-    }
-    .tieu-de-phanquyen .left-group {
-        display: flex;
-        align-items: center;
-        gap: 20px;
-        flex-wrap: wrap;
-    }
-    .namhoc-group {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        font-size: 16px;
-        font-weight: normal;
-        background: #f1f3f5;
-        padding: 4px 10px;
-        border-radius: 20px;
-    }
-    .namhoc-group label {
-        margin: 0;
-        font-weight: 500;
-        color: #0b3b5f;
-    }
-    .namhoc-group input {
-        border: 1px solid #ced4da;
-        border-radius: 4px;
-        padding: 4px 8px;
-        width: 110px;
-        font-size: 14px;
-        font-family: inherit;
-        text-align: center;
     }
     .btn-chucnang {
         font-size: 13px;
@@ -117,30 +86,22 @@
     .error-box {
         background: #f8d7da;
         color: #721c24;
-        padding: 8px 12px;
-        border-radius: 5px;
+        padding: 8px;
+        border-radius: 4px;
         margin-bottom: 10px;
-        border-left: 4px solid #dc3545;
         font-size: 13px;
     }
 </style>
 
 <div class="khung-phanquyen">
     <div class="tieu-de-phanquyen">
-        <div class="left-group">
-            <span><i class="bi bi-shield-lock"></i> CẤP QUYỀN TRUY CẬP</span>
-            <div class="namhoc-group">
-                <label for="namHocInput"><i class="bi bi-calendar3"></i> Năm học:</label>
-                <input type="text" id="namHocInput" placeholder="YYYY-YYYY" maxlength="9">
-            </div>
-        </div>
+        <span><i class="bi bi-shield-lock"></i> CẤP QUYỀN TRUY CẬP</span>
         <div>
             <button class="btn btn-success btn-chucnang" id="btnThemMoiPQ"><i class="bi bi-plus-circle"></i> Thêm mới</button>
             <button class="btn btn-primary btn-chucnang" id="btnCapNhatPQ"><i class="bi bi-save"></i> Cập nhật</button>
-            <button class="btn btn-secondary btn-chucnang" id="btnTaiLaiPQ"><i class="bi bi-arrow-repeat"></i> Tải lại</button>
         </div>
     </div>
-    <div id="errorDisplay" style="display: none;" class="error-box"></div>
+    <div id="errorDisplay" style="display:none;" class="error-box"></div>
     <div style="overflow-x: auto;">
         <table class="bang-phanquyen" id="quyenTablePQ">
             <thead>
@@ -168,72 +129,48 @@
 
 <script>
     (function() {
-        // --- Lấy API_URL và TOKEN từ nhiều nguồn ---
+        // Lấy API URL từ window cha hoặc window hiện tại
         var API_URL = null;
         var getToken = function() { return ''; };
-        
-        function initApi() {
-            try {
-                if (window.parent && window.parent.ddungApi) {
-                    API_URL = window.parent.ddungApi;
-                    getToken = function() { return window.parent.PGV_TOKEN || ''; };
-                } else if (typeof ddungApi !== 'undefined') {
-                    API_URL = ddungApi;
-                    getToken = function() { return (typeof PGV_TOKEN !== 'undefined') ? PGV_TOKEN : ''; };
-                } else if (window.ddungApi) {
-                    API_URL = window.ddungApi;
-                    getToken = function() { return window.PGV_TOKEN || ''; };
-                }
-            } catch(e) { console.warn(e); }
-            
-            // Nếu vẫn chưa có, thử đọc từ localStorage (cho phép người dùng set thủ công)
-            if (!API_URL) {
-                var saved = localStorage.getItem('custom_api_url');
-                if (saved && saved.trim()) API_URL = saved;
+        try {
+            if (window.parent && window.parent.ddungApi) {
+                API_URL = window.parent.ddungApi;
+                getToken = function() { return window.parent.PGV_TOKEN || ''; };
             }
-            return API_URL;
+        } catch(e) {}
+        if (!API_URL && typeof ddungApi !== 'undefined') {
+            API_URL = ddungApi;
+            getToken = function() { return (typeof PGV_TOKEN !== 'undefined') ? PGV_TOKEN : ''; };
         }
         
-        initApi();
-        
-        // Hiển thị lỗi trên giao diện
+        // Hàm hiển thị lỗi
         function showError(msg) {
             var errDiv = document.getElementById('errorDisplay');
             if (errDiv) {
                 errDiv.innerHTML = '<i class="bi bi-exclamation-triangle-fill"></i> ' + msg;
                 errDiv.style.display = 'block';
-                setTimeout(function() { errDiv.style.display = 'none'; }, 8000);
+                setTimeout(function() { errDiv.style.display = 'none'; }, 5000);
             } else {
                 alert(msg);
             }
+            console.error(msg);
         }
         
-        // Gọi API với xử lý lỗi chi tiết, timeout và CORS
         function callApi(action, data, onSuccess, onError) {
             if (!API_URL) {
-                var errMsg = "Không tìm thấy API_URL. Hãy đảm bảo biến ddungApi được định nghĩa ở cửa sổ cha hoặc dùng localStorage.setItem('custom_api_url', 'URL')";
-                if (onError) onError(new Error(errMsg));
-                else showError(errMsg);
+                if (onError) onError(new Error("Không tìm thấy API_URL"));
                 return;
             }
-            
             var payload = { hdong: action, token: getToken() };
             for (var k in data) payload[k] = data[k];
             
-            var controller = new AbortController();
-            var timeoutId = setTimeout(function() { controller.abort(); }, 15000);
-            
             fetch(API_URL, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },  // Đổi thành JSON
-                body: JSON.stringify(payload),
-                signal: controller.signal,
-                mode: 'cors',
-                credentials: 'omit'
+                headers: { 'Content-Type': 'application/json' },  // sửa thành JSON
+                body: JSON.stringify(payload)
             })
-            .then(function(res) {
-                clearTimeout(timeoutId);
-                if (!res.ok) throw new Error('HTTP ' + res.status + ' ' + res.statusText);
+            .then(function(res) { 
+                if (!res.ok) throw new Error('HTTP ' + res.status);
                 return res.text();
             })
             .then(function(txt) {
@@ -246,21 +183,20 @@
                 if (json.ttai === 'loi') throw new Error(json.tbao || 'Lỗi không xác định');
                 onSuccess(json);
             })
-            .catch(function(err) {
-                clearTimeout(timeoutId);
-                if (err.name === 'AbortError') err = new Error('Quá thời gian chờ (15s). Kiểm tra kết nối.');
-                else if (err.message === 'Failed to fetch') err = new Error('Không thể kết nối tới API. Kiểm tra URL, CORS hoặc mạng.\nURL: ' + API_URL);
-                if (onError) onError(err);
-                else showError(err.message);
+            .catch(function(err) { 
+                if (onError) onError(err); 
             });
         }
         
-        // --- Các hàm gọi API với action đã sửa (bỏ dấu cách) ---
+        // Sửa tên action: bỏ dấu cách
         function layDanhSach() {
             return new Promise(function(resolve, reject) {
                 callApi('laydlkhaibao', {}, function(res) {
+                    // Dữ liệu trả về từ sheet KHAIBAO, cột B đến E (5 dòng đầu có thể là header? B5:E là dữ liệu)
+                    // Giả sử res.dliu là mảng các dòng, mỗi dòng là mảng 4 cột [ID sheet, Email, Tên hiển thị, Quyền]
                     var raw = res.dliu || [];
                     var list = raw.map(function(row) {
+                        // Đảm bảo row là mảng có ít nhất 4 phần tử
                         return {
                             idSheet: (row[0] !== undefined && row[0] !== null) ? String(row[0]).trim() : '',
                             email: (row[1] || '').trim(),
@@ -276,7 +212,7 @@
         function capNhatDanhSach(list) {
             return new Promise(function(resolve, reject) {
                 var dataToSave = list.map(function(item) {
-                    return [String(item.idSheet), item.email, item.tenHienThi, item.quyen];
+                    return [item.idSheet, item.email, item.tenHienThi, item.quyen];
                 });
                 callApi('capnhatkhaibao', { dliu: dataToSave }, function(res) { resolve(res); }, reject);
             });
@@ -284,30 +220,14 @@
         
         function xoaSheetCaNhan(tenSheet) {
             return new Promise(function(resolve, reject) {
-                if (!tenSheet || String(tenSheet).trim() === '') {
+                if (!tenSheet || tenSheet.trim() === '') {
                     resolve({ ttai: 'tcong', tbao: 'Tên sheet rỗng, bỏ qua' });
                     return;
                 }
-                callApi('xoasheetcanhan', { tenSheet: String(tenSheet) }, resolve, reject);
+                callApi('xoasheetcanhan', { tenSheet: tenSheet }, resolve, reject);
             });
         }
         
-        // --- Đồng bộ năm học với sheet GIAOVIEC ô C7 ---
-        function layNamHocTuGIAOVIEC() {
-            return new Promise(function(resolve) {
-                callApi('laygiaovieccell', { sheet: 'GIAOVIEC', cell: 'C7' }, function(res) {
-                    resolve(res.giatri || '');
-                }, function() { resolve(''); });
-            });
-        }
-        
-        function capNhatNamHocVaoGIAOVIEC(namHoc) {
-            return new Promise(function(resolve, reject) {
-                callApi('capnhatgiaovieccell', { sheet: 'GIAOVIEC', cell: 'C7', value: namHoc }, resolve, reject);
-            });
-        }
-        
-        // --- Quản lý giao diện ---
         var currentList = [];
         var $ = function(sel) { return document.querySelector(sel); };
         var $$ = function(sel) { return document.querySelectorAll(sel); };
@@ -339,7 +259,7 @@
                 var stt = i+1;
                 var tr = document.createElement('tr');
                 tr.setAttribute('data-idx', i);
-                
+                // Xóa
                 var tdXoa = document.createElement('td');
                 tdXoa.className = 'text-center';
                 var btnXoa = document.createElement('button');
@@ -349,8 +269,11 @@
                 btnXoa.onclick = (function(idx) { 
                     return async function() {
                         var idSheet = currentList[idx].idSheet;
-                        if (!idSheet) { alert('Không thể xóa: ID sheet trống.'); return; }
-                        if (confirm('Bạn có chắc muốn xóa cán bộ "' + idSheet + '"?\n⚠️ Sheet riêng của người đó (nếu có) sẽ bị xóa vĩnh viễn!')) {
+                        if (!idSheet) {
+                            alert('Không thể xóa: ID sheet trống.');
+                            return;
+                        }
+                        if (confirm('Bạn có chắc muốn xóa cán bộ "' + idSheet + '"?\n⚠️ Sheet riêng của người này (nếu có) sẽ bị xóa vĩnh viễn!')) {
                             btnXoa.innerHTML = '<i class="bi bi-hourglass-split"></i>';
                             btnXoa.disabled = true;
                             try {
@@ -368,38 +291,43 @@
                     };
                 })(i);
                 tdXoa.appendChild(btnXoa);
-                
+                // STT
                 var tdStt = document.createElement('td');
+                tdStt.className = 'stt-cell';
                 tdStt.innerText = stt;
-                
+                // ID sheet
                 var tdId = document.createElement('td');
                 var inpId = document.createElement('input');
                 inpId.type = 'text';
                 inpId.className = 'id-sheet-input';
                 inpId.value = item.idSheet;
+                inpId.setAttribute('data-field', 'idSheet');
                 inpId.setAttribute('data-idx', i);
                 inpId.placeholder = 'VD: GV01';
                 tdId.appendChild(inpId);
-                
+                // Email
                 var tdEmail = document.createElement('td');
                 var inpEmail = document.createElement('input');
                 inpEmail.type = 'email';
                 inpEmail.className = 'email-input';
                 inpEmail.value = item.email;
+                inpEmail.setAttribute('data-field', 'email');
                 inpEmail.setAttribute('data-idx', i);
                 tdEmail.appendChild(inpEmail);
-                
+                // Tên hiển thị
                 var tdName = document.createElement('td');
                 var inpName = document.createElement('input');
                 inpName.type = 'text';
                 inpName.className = 'name-input';
                 inpName.value = item.tenHienThi;
+                inpName.setAttribute('data-field', 'tenHienThi');
                 inpName.setAttribute('data-idx', i);
                 tdName.appendChild(inpName);
-                
+                // Quyền
                 var tdQuyen = document.createElement('td');
                 var sel = document.createElement('select');
                 sel.className = 'quyen-select';
+                sel.setAttribute('data-field', 'quyen');
                 sel.setAttribute('data-idx', i);
                 var opts = ['', 'x', 'xx', 'xxx'];
                 var labels = ['--', 'x (Người giao)', 'xx (Quản trị)', 'xxx (Cao cấp)'];
@@ -423,11 +351,11 @@
             
             // Gắn sự kiện
             $$('.id-sheet-input').forEach(function(inp) {
-                inp.onchange = function() {
+                inp.onchange = function(e) {
                     var idx = parseInt(this.getAttribute('data-idx'));
                     var newVal = this.value.trim();
                     var lowerNew = newVal.toLowerCase();
-                    var duplicate = currentList.some(function(item, i) { return i !== idx && String(item.idSheet).toLowerCase() === lowerNew; });
+                    var duplicate = currentList.some(function(item, i) { return i !== idx && item.idSheet.toLowerCase() === lowerNew; });
                     if (duplicate) {
                         showTempError(this, 'ID sheet đã tồn tại!');
                         this.value = currentList[idx].idSheet;
@@ -435,11 +363,11 @@
                     }
                     currentList[idx].idSheet = newVal;
                 };
-                inp.onblur = function() {
+                inp.onblur = function(e) {
                     var idx = parseInt(this.getAttribute('data-idx'));
                     var newVal = this.value.trim();
                     var lowerNew = newVal.toLowerCase();
-                    var duplicate = currentList.some(function(item, i) { return i !== idx && String(item.idSheet).toLowerCase() === lowerNew; });
+                    var duplicate = currentList.some(function(item, i) { return i !== idx && item.idSheet.toLowerCase() === lowerNew; });
                     if (duplicate) {
                         showTempError(this, 'ID sheet không được trùng!');
                         this.value = currentList[idx].idSheet;
@@ -480,7 +408,7 @@
         function validateList() {
             var map = new Map();
             for (var i = 0; i < currentList.length; i++) {
-                var id = String(currentList[i].idSheet).trim();
+                var id = currentList[i].idSheet.trim();
                 if (id === '') {
                     alert('Dòng thứ ' + (i+1) + ' chưa nhập ID sheet.');
                     return false;
@@ -503,12 +431,7 @@
             btn.disabled = true;
             try {
                 await capNhatDanhSach(currentList);
-                var namHocInput = $('#namHocInput');
-                if (namHocInput) {
-                    var namHoc = namHocInput.value.trim();
-                    if (namHoc) await capNhatNamHocVaoGIAOVIEC(namHoc);
-                }
-                alert('✅ Thành công\nĐã cập nhật dữ liệu quyền và năm học.');
+                alert('✅ Thành công\nĐã cập nhật dữ liệu quyền vào sheet KHAIBAO (cột B-E).');
                 await taiLaiDuLieu();
             } catch (err) {
                 showError('Lỗi lưu: ' + err.message);
@@ -520,57 +443,34 @@
         
         async function taiLaiDuLieu() {
             var tbody = $('#quyenTableBodyPQ');
-            if (tbody) tbody.innerHTML = '<tr><td colspan="6" class="text-center">Đang tải dữ liệu...<div class="spinner-border spinner-sm ms-2"></div>2%</td></tr>';
+            if (tbody) tbody.innerHTML = '<tr><td colspan="6" class="text-center">Đang tải...<div class="spinner-border spinner-sm ms-2"></div>2%</td></tr>';
             try {
                 var list = await layDanhSach();
                 currentList = list;
                 renderTable();
+                // Ẩn lỗi nếu thành công
                 var errDiv = document.getElementById('errorDisplay');
                 if (errDiv) errDiv.style.display = 'none';
             } catch (err) {
+                console.error(err);
                 showError('Tải dữ liệu thất bại: ' + err.message);
                 currentList = [];
                 renderTable();
             }
         }
         
-        async function khoiTaoNamHoc() {
-            var inp = $('#namHocInput');
-            if (!inp) return;
-            var now = new Date();
-            var year = now.getFullYear();
-            var month = now.getMonth() + 1;
-            var startYear = (month >= 7) ? year : year - 1;
-            var defaultNam = startYear + '-' + (startYear + 1);
-            try {
-                var value = await layNamHocTuGIAOVIEC();
-                if (value && /^\d{4}-\d{4}$/.test(value)) inp.value = value;
-                else inp.value = localStorage.getItem('namHocQuyen') || defaultNam;
-            } catch(e) {
-                inp.value = localStorage.getItem('namHocQuyen') || defaultNam;
-            }
-            inp.addEventListener('change', function() {
-                var v = this.value.trim();
-                if (/^\d{4}-\d{4}$/.test(v)) localStorage.setItem('namHocQuyen', v);
-                else this.value = localStorage.getItem('namHocQuyen') || defaultNam;
-            });
-        }
-        
-        // --- Khởi tạo ---
+        // Khởi tạo
         if (!API_URL) {
-            $('#quyenTableBodyPQ').innerHTML = '<tr><td colspan="6" class="text-danger text-center">⚠️ Không tìm thấy API_URL. Cần định nghĩa ddungApi hoặc set localStorage custom_api_url.2%</td></tr>';
-            showError('Không tìm thấy API_URL. Vui lòng kiểm tra lại.');
+            $('#quyenTableBodyPQ').innerHTML = '<tr><td colspan="6" class="text-danger text-center">Không tìm thấy API. Vui lòng tải lại trang chính.2%</td></tr>';
+            showError('Không tìm thấy API_URL. Hãy đảm bảo ddungApi được định nghĩa.');
             return;
         }
         
-        khoiTaoNamHoc();
         taiLaiDuLieu();
         
         var btnThem = $('#btnThemMoiPQ');
         var btnCap = $('#btnCapNhatPQ');
-        var btnTai = $('#btnTaiLaiPQ');
         if (btnThem) btnThem.onclick = themDongMoi;
         if (btnCap) btnCap.onclick = luuDuLieu;
-        if (btnTai) btnTai.onclick = taiLaiDuLieu;
     })();
 </script>
