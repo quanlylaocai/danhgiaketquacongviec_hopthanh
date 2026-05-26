@@ -267,6 +267,11 @@ function nopBcaoChinh() {
         else alert("Không có quyền");
         return;
     }
+  if (!window.PGV_IS_SELF && window.PGV_QUYEN === 'xxx') {
+    if (typeof hienThongb === 'function') hienThongb('loi', "Quyền xxx không được nộp báo cáo thay người khác.");
+    else alert("Không có quyền nộp báo cáo thay người khác.");
+    return;
+}
     const gn = parseInt($('#nhapSngayNghi').val()) || 0, ld = $('#nhapLdoNghi').val().trim();
     if (gn > 0 && ld === "") { hienThongb('cbh', `Bạn đã có ${gn} ngày nghỉ.\nPhải nhập lý do!`, () => setTimeout(() => $('#nhapLdoNghi').focus(), 500)); return; }
     const yk = $('#nhapYkien').val().trim(), bc = $('#nhapBcao').val().trim();
