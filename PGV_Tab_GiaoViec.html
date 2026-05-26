@@ -9,7 +9,7 @@
   #khuGvChinh th { background-color: #0d6efd; color: white; text-align: center; padding: 8px 4px; border: 1px solid #dee2e6; vertical-align: middle; font-size: 13px; }
   #khuGvChinh td { border: 1px solid #999; padding: 0 !important; vertical-align: middle; }
   
-  /* Textarea mặc định cho phép giãn theo nội dung, kể cả khi disabled */
+  /* === SỬA CSS ĐỂ TEXTAREA DISABLED VẪN GIÃN DÒNG === */
   #gvBangNv textarea.form-control {
     font-family: 'Times New Roman', Times, serif;
     font-size: 14px;
@@ -21,9 +21,9 @@
     margin: 0;
     background-color: transparent;
     resize: none;
-    overflow-y: visible !important;      /* Quan trọng: hiển thị toàn bộ nội dung khi disabled */
+    overflow-y: visible !important;      /* Đổi từ hidden thành visible */
     min-height: 35px;
-    height: auto !important;            /* Tự động cao theo nội dung */
+    height: auto !important;            /* Thêm dòng này để tự động cao */
     line-height: 1.4;
     white-space: pre-wrap;
     word-wrap: break-word;
@@ -36,6 +36,7 @@
     background-color: transparent;
     cursor: default;
   }
+  /* =================================== */
   
   #gvBangNv input.form-control, #gvBangNv select.form-select { font-family: 'Times New Roman', Times, serif; font-size: 14px; border: none !important; box-shadow: none !important; width: 100%; height: 100%; padding: 4px; background-color: transparent; }
   #khuGvChinh td.oHdong { text-align: center; padding: 2px !important; background-color: #f8f9fa; }
@@ -113,23 +114,11 @@
         $('.nutThem').show();
     }
 
-    // Hàm điều chỉnh chiều cao textarea theo nội dung (kể cả khi disabled)
-    function gvAutoResizeTextarea(textarea) {
-        if (!textarea) return;
-        // Reset height để tính toán chính xác
-        textarea.style.height = 'auto';
-        // Lấy chiều cao thực tế của nội dung (scrollHeight)
-        let newHeight = textarea.scrollHeight;
-        // Giới hạn tối thiểu 35px, tối đa 300px (có thể tùy chỉnh)
-        if (newHeight < 35) newHeight = 35;
-        if (newHeight > 300) newHeight = 300;
-        textarea.style.height = newHeight + 'px';
-    }
-
-    // Gọi resize cho tất cả textarea trong bảng (dùng khi load dữ liệu)
+    // === HÀM RESIZE TEXTAREA (KỂ CẢ KHI DISABLED) ===
     function gvResizeAllTextareas() {
         document.querySelectorAll('#gvBangNv textarea.form-control').forEach(function(tx) {
-            gvAutoResizeTextarea(tx);
+            tx.style.height = 'auto';
+            tx.style.height = tx.scrollHeight + 'px';
         });
     }
 
@@ -233,12 +222,12 @@
             if (!isNaN(dcstt)) { 
                 ddemDong = dcstt + 1; 
             } 
-            // Resize tất cả textarea sau khi vẽ xong
-            setTimeout(function() { 
+            setTimeout(() => { 
+                // Resize tất cả textarea (kể cả disabled) để hiển thị đủ nội dung
                 gvResizeAllTextareas();
                 // Vẫn giữ sự kiện cho textarea không disabled (nếu có)
-                document.querySelectorAll('#khuGvChinh textarea.form-control:not(:disabled)').forEach(ptu => gvCoDan(ptu));
-            }, 100);
+                document.querySelectorAll('#khuGvChinh textarea.form-control:not(:disabled)').forEach(ptu => gvCoDan(ptu)); 
+            }, 100); 
         } else { 
             gvVeDong(); 
         }
@@ -283,8 +272,13 @@
                 }
             }
         }
-        // Cập nhật lại chiều cao textarea sau khi thay đổi nội dung
-        gvAutoResizeTextarea(textarea);
+        // Resize lại textarea sau khi thay đổi nội dung
+        setTimeout(function() {
+            if (textarea && !textarea.disabled) {
+                textarea.style.height = 'auto';
+                textarea.style.height = textarea.scrollHeight + 'px';
+            }
+        }, 10);
     }
 
     function gvVeDong(dong = null) {
@@ -360,19 +354,17 @@
         
         tb.appendChild(tr);
         
-        // Resize ngay sau khi thêm dòng (đối với dòng mới)
-        if (dong === null) {
+        // Resize ngay sau khi thêm dòng
+        setTimeout(function() {
             const newTextarea = tr.querySelector('.oNdGv');
-            if (newTextarea) gvAutoResizeTextarea(newTextarea);
-        } else {
-            // Với dòng cũ, cũng cần resize để hiển thị đủ nội dung
-            const oldTextarea = tr.querySelector('.oNdGv');
-            if (oldTextarea) gvAutoResizeTextarea(oldTextarea);
-        }
+            if (newTextarea) {
+                newTextarea.style.height = 'auto';
+                newTextarea.style.height = newTextarea.scrollHeight + 'px';
+            }
+        }, 10);
     }
     
     function gvCoDan(ptu) { 
-        // Chỉ resize khi textarea không bị disabled
         if (!ptu.disabled) {
             ptu.style.height = 'auto'; 
             ptu.style.height = (ptu.scrollHeight) + 'px'; 
@@ -390,7 +382,6 @@
     function gvThemDong() { 
         ddemDong = document.querySelectorAll('#gvThanBang tr').length + 1; 
         gvVeDong(null); 
-        // Resize lại sau khi thêm
         setTimeout(gvResizeAllTextareas, 50);
     }
     
@@ -525,3 +516,50 @@
 
     function gvXndongXoa() { 
         const hmc = document.getElementById('gvHopThoaiXoa');
+        const modal = bootstrap.Modal.getInstance(hmc); 
+        modal.hide(); 
+        
+        if (tdtaiXoaCho && ptuChoXoa) { 
+            const { nam, thang, nviec } = tdtaiXoaCho; 
+            gvDatTai(true, `🧹 Đang làm sạch dữ liệu và cập nhật nội dung sang ${thang}`); 
+            gvGoiMayChu(nam, thang, nviec, ptuChoXoa, 'DELETE'); 
+        } 
+    }
+
+    function gvHuyXoa() { 
+        if (ptuChoXoa && ptuChoXoa.tagName !== 'BUTTON') { 
+            ptuChoXoa.value = ""; 
+        } 
+        if (tdtaiXoaCho && tdtaiXoaCho.thangCu) {
+            document.getElementById('gvLocThang').value = tdtaiXoaCho.thangCu;
+        }
+        tdtaiXoaCho = null; 
+        ptuChoXoa = null; 
+    }
+
+    function gvGoiMayChu(n, t, nv, ptu, hth) {
+        khachApi.gvXulyNviec(
+            { nam: n, thang: t, nviec: nv }, 
+            function(kq) {
+                gvDatTai(false);
+                if (kq && kq.ttai === 'tcong') { 
+                    ptu.style.backgroundColor = '#d1e7dd'; 
+                    ptu.style.borderColor = '#badbcc'; 
+                    ptu.style.fontWeight = 'bold'; 
+                    if (hth === 'DELETE') { 
+                        tdtaiXoaCho = null; 
+                        ptuChoXoa = null; 
+                        setTimeout(gvLaydlGoc, 1000); 
+                    } 
+                } else { 
+                    gvTbaoNhanh('loi', "Lỗi Server: " + (kq ? kq.tbao : "Unkown")); 
+                    if (ptu.tagName !== 'BUTTON') ptu.value = ""; 
+                }
+            }, 
+            function(l) { 
+                gvDatTai(false); 
+                gvTbaoNhanh('loi', "Lỗi kết nối: " + l.message); 
+            }
+        );
+    }
+</script>
