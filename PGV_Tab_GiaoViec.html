@@ -165,7 +165,6 @@
             } 
             setTimeout(() => { 
                 document.querySelectorAll('#khuGvChinh textarea.form-control').forEach(ptu => gvCoDan(ptu)); 
-                // === THÊM TÍNH NĂNG KHÓA CỘT THỜI GIAN HT VÀ NGƯỜI THỰC HIỆN KHI LOAD DỮ LIỆU ===
                 const isReadonlyMode = (window.PGV_GIAO_VIEC_READONLY === true);
                 if (isReadonlyMode) {
                     document.querySelectorAll('#gvBangNv input.oNgayGv').forEach(inp => inp.readOnly = true);
@@ -176,22 +175,18 @@
             gvVeDong(); 
         }
 
-        // ---- XỬ LÝ HIỂN THỊ NÚT "CẬP NHẬT NHIỆM VỤ CHUNG" DỰA TRÊN CỘT E ----
-        // Lấy giá trị cột E từ dữ liệu trả về (dl.cotE) hoặc từ biến toàn cục
+        // Ẩn nút "Cập nhật nhiệm vụ chung" nếu cột E = "x" hoặc "xx"
         const cotE = (dl && dl.cotE) ? dl.cotE : (window.PGV_COT_E || '');
         const btnChung = document.getElementById('btnCapNhatChung');
         if (cotE === 'x' || cotE === 'xx') {
-            // Ẩn nút nếu cột E = "x" hoặc "xx"
             if (btnChung) btnChung.style.display = 'none';
         } else {
-            // Ngược lại: hiển thị nếu có quyền (giữ nguyên logic cũ)
             if (typeof canbHientai !== 'undefined' && canbHientai.qchon === true) {
                 if (btnChung) btnChung.style.display = 'inline-block';
             } else {
                 if (btnChung) btnChung.style.display = 'none';
             }
         }
-        // ---------------------------------------------------------------
     }
 
     function gvVeDong(dong = null) {
@@ -229,6 +224,7 @@
         
         const cv = (bltd === "Cho vượt tiến độ") ? "selected" : "";
         
+        // SỬA LỖI: dùng đúng biến btnxoa (không phải btnxosa)
         tr.innerHTML = `<td class="oHdong">${btnxoa}</td><td class="text-center"><input type="text" class="form-control text-center oSttGv" value="${bstt}" readonly></td><td><textarea class="form-control oNdGv" placeholder="Nhập nội dung..." rows="1" oninput="gvCoDan(this)" onfocus="gvCoDan(this)"></textarea></td><td><input type="text" class="form-control text-center oNgayGv" placeholder="dd/mm/yyyy" onkeyup="gvDinhDangNgay(this, event)"></td><td><select class="form-select text-center oTdoGv" ${dcb}><option value="">--Chọn--</option><option value="Cho vượt tiến độ" ${cv}>Cho vượt tiến độ</option></select></td><td><select class="form-select oNnghanGv" onchange="gvDoiNgn(this)" ${dcb}>${lchon}</select></td><td><textarea class="form-control text-center oGchuGv" placeholder="Ghi chú" rows="1" oninput="gvCoDan(this)" onfocus="gvCoDan(this)"></textarea></td>`; 
         
         tr.querySelector('.oNdGv').value = bnd;
