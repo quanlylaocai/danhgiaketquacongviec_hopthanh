@@ -122,7 +122,7 @@
                 </tr>
             </thead>
             <tbody id="quyenTableBodyPQ">
-                <tr><td colspan="6" class="text-center">Đang tải...<div class="spinner-border spinner-sm ms-2"></div>2%</table></tr>
+                <tr><td colspan="6" class="text-center">Đang tải...<div class="spinner-border spinner-sm ms-2"></div>2%</tr></tr>
             </tbody>
         </table>
     </div>
@@ -177,7 +177,8 @@
                     var raw = res.dliu || [];
                     var list = raw.map(function(row) {
                         return {
-                            idSheet: (row[0] || '').trim(),
+                            // Đảm bảo ID sheet là text (ép kiểu String)
+                            idSheet: String(row[0] !== undefined && row[0] !== null ? row[0] : '').trim(),
                             email: (row[1] || '').trim(),
                             tenHienThi: (row[2] || '').trim(),
                             quyen: (row[3] || '').trim()
@@ -191,7 +192,8 @@
         function capNhatDanhSach(list) {
             return new Promise(function(resolve, reject) {
                 var dataToSave = list.map(function(item) {
-                    return [item.idSheet, item.email, item.tenHienThi, item.quyen];
+                    // Đảm bảo ID sheet được lưu dưới dạng text (ép kiểu String)
+                    return [String(item.idSheet), item.email, item.tenHienThi, item.quyen];
                 });
                 callApi('capnhatkhai bao', { dliu: dataToSave }, function(res) { resolve(res); }, reject);
             });
@@ -241,7 +243,7 @@
             if (!tbody) return;
             tbody.innerHTML = '';
             if (currentList.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" class="text-center">Chưa có dữ liệu. Nhấn "Thêm mới" để tạo.2%</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center">Chưa có dữ liệu. Nhấn "Thêm mới" để tạo.2%<tr></tr>';
                 return;
             }
             for (var i = 0; i < currentList.length; i++) {
