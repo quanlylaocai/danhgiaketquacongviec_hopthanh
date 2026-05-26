@@ -29,7 +29,7 @@
       </div>
       <div class="hopLoc">
         <button id="gvNutChth" class="btn btn-danger btn-sm fw-bold nhapTuyChinh" style="color: white; border: none; padding: 4px 10px; display: flex; align-items: center;" onclick="gvXlmChth(this)">Chuyển tháng mới</button>
-        <!-- Đã khóa ô chọn năm học -->
+        <!-- Ô năm học bị khóa, chỉ hiển thị giá trị từ GIAOVIEC!C7 -->
         <select id="gvLocNam" class="form-select nhapTuyChinh" style="width: 140px;" disabled>
           <option value="2024-2025">2024-2025</option>
           <option value="2025-2026" selected>2025-2026</option>
@@ -68,10 +68,6 @@
     let ddemDong = 1; 
     let tdtaiXoaCho = null; 
     let ptuChoXoa = null;
-
-    // Khởi tạo: lấy năm học dự phòng từ localStorage
-    let namMacDinh = localStorage.getItem('gv_nam_hoc') || '2025-2026';
-    document.getElementById('gvLocNam').value = namMacDinh;
 
     setTimeout(function() { 
         gvTaiCanb(); 
@@ -158,25 +154,15 @@
     function gvKhiTaiXong(dl) {
         gvDatTai(false); 
         
-        // Xử lý năm học
+        // Xử lý năm học: lấy trực tiếp từ dl.nam (đã được backend đọc từ GIAOVIEC!C7)
         let namValue = dl.nam;
-        console.log("[DEBUG] Năm học từ backend:", namValue);
+        console.log("[DEBUG] Năm học từ backend (GIAOVIEC!C7):", namValue);
         if (!namValue || namValue.trim() === "") {
-            console.warn("⚠️ Năm học từ backend bị rỗng. Kiểm tra KHAIBAO!B2 hoặc GIAOVIEC!C7.");
-            let localNam = localStorage.getItem('gv_nam_hoc');
-            if (localNam && localNam.trim() !== "") {
-                document.getElementById('gvLocNam').value = localNam;
-                console.log("Đã khôi phục năm học từ localStorage:", localNam);
-                gvTbaoNhanh('cbh', "Năm học được khôi phục từ bộ nhớ tạm. Vui lòng kiểm tra lại ô B2 sheet KHAIBAO để đồng bộ chính xác.");
-            } else {
-                // Giữ nguyên giá trị mặc định đã set ban đầu
-                console.log("Giữ nguyên năm học mặc định:", document.getElementById('gvLocNam').value);
-                gvTbaoNhanh('cbh', "Không nhận được năm học từ hệ thống. Đang sử dụng năm mặc định. Vui lòng kiểm tra ô B2 sheet KHAIBAO.");
-            }
+            console.warn("⚠️ Năm học từ backend bị rỗng. Kiểm tra ô C7 sheet GIAOVIEC.");
+            gvTbaoNhanh('cbh', "Không nhận được năm học từ hệ thống. Vui lòng kiểm tra ô C7 sheet GIAOVIEC.");
+            // Giữ nguyên giá trị mặc định (2025-2026) trên dropdown
         } else {
             document.getElementById('gvLocNam').value = namValue;
-            localStorage.setItem('gv_nam_hoc', namValue);
-            console.log("Đã cập nhật năm học từ backend:", namValue);
         }
         
         if(dl.thang) document.getElementById('gvLocThang').value = dl.thang;
@@ -459,8 +445,6 @@
                     ptu.style.backgroundColor = '#d1e7dd'; 
                     ptu.style.borderColor = '#badbcc'; 
                     ptu.style.fontWeight = 'bold'; 
-                    // Lưu năm học vào localStorage sau khi giao việc thành công
-                    localStorage.setItem('gv_nam_hoc', n);
                     if (hth === 'DELETE') { 
                         tdtaiXoaCho = null; 
                         ptuChoXoa = null; 
