@@ -42,7 +42,9 @@
 
     <div class="hopBang">
       <table id="gvBangNv">
-        <thead><tr><th style="width: 40px;">Xóa</th><th style="width: 40px;">TT</th><th style="width: 35%;">Nội dung công việc</th><th style="width: 120px;">Thời gian HT</th><th style="width: 15%;">Loại tiến độ</th><th style="width: 15%;">Người thực hiện</th><th style="width: 20%;">Ghi chú</th></tr></thead>
+        <thead>贩<th style="width: 40px;">Xóa</th><th style="width: 40px;">TT</th><th style="width: 35%;">Nội dung công việc</th><th style="width: 120px;">Thời gian HT</th><th style="width: 15%;">Loại tiến độ</th><th style="width: 15%;">Người thực hiện</th><th style="width: 20%;">Ghi chú</th>\]
+
+      </thead>
         <tbody id="gvThanBang"></tbody>
       </table>
       <button class="btn btn-success nutThem" onclick="gvThemDong()">+ Thêm dòng mới</button>
@@ -175,38 +177,44 @@
             gvVeDong(); 
         }
 
-        // ========== THUẬT TOÁN ĐIỀU KHIỂN NÚT THEO CỘT E (sửa lỗi 'xx' chưa ẩn) ==========
-        let cotE = (dl && dl.cotE) ? dl.cotE : (window.PGV_COT_E || '');
-        // Chuẩn hóa: loại bỏ khoảng trắng, viết thường
-        cotE = String(cotE).trim().toLowerCase();
+        // ================== XỬ LÝ HIỂN THỊ NÚT THEO CỘT E ==================
+        // Lấy giá trị cột E: ưu tiên từ dl.cotE, sau đó từ biến toàn cục
+        let cotE = (dl && dl.cotE !== undefined) ? dl.cotE : (window.PGV_COT_E || '');
+        // Chuẩn hóa về string và trim
+        cotE = String(cotE).trim();
         
         const btnChung = document.getElementById('btnCapNhatChung');
         const btnChuyenThang = document.getElementById('gvNutChth');
         const isAdmin = (typeof canbHientai !== 'undefined' && canbHientai.qchon === true);
-
-        console.log("[GiaoViec] cotE =", cotE, "| isAdmin =", isAdmin);
-
+        
+        // Log để debug
+        console.log("[GiaoViec] cotE = '" + cotE + "', isAdmin = " + isAdmin);
+        
+        // Logic theo yêu cầu:
+        // - Nếu cotE === 'x' : ẩn cả hai nút
+        // - Nếu cotE === 'xx': ẩn nút cập nhật chung, hiện nút chuyển tháng
+        // - Ngược lại: hiển thị theo quyền admin
         if (cotE === 'x') {
-            // Ẩn cả hai nút
             if (btnChung) btnChung.style.display = 'none';
             if (btnChuyenThang) btnChuyenThang.style.display = 'none';
+            console.log("  => E='x': Ẩn cả hai nút");
         } 
         else if (cotE === 'xx') {
-             if (btnChung) btnChung.style.display = 'none';
-            if (btnChuyenThang) btnChuyenThang.style.display = 'flex';
+            if (btnChung) btnChung.style.display = 'none';   // Ẩn nút cập nhật chung
+            if (btnChuyenThang) btnChuyenThang.style.display = 'flex'; // Hiện nút chuyển tháng
+            console.log("  => E='xx': Ẩn nút cập nhật chung, hiện nút chuyển tháng");
         }
         else {
-            // Mặc định: hiển thị theo quyền admin
+            // Trường hợp bình thường: hiển thị theo quyền admin
             if (btnChung) {
                 btnChung.style.display = isAdmin ? 'inline-block' : 'none';
-                if (isAdmin) btnChung.removeAttribute('style');
             }
             if (btnChuyenThang) {
                 btnChuyenThang.style.display = isAdmin ? 'flex' : 'none';
-                if (isAdmin) btnChuyenThang.removeAttribute('style');
             }
+            console.log("  => E khác x/xx: hiển thị theo admin = " + isAdmin);
         }
-        // ============================================================
+        // ================================================================
     }
 
     function gvVeDong(dong = null) {
