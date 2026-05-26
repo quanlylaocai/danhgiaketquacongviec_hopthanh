@@ -29,7 +29,8 @@
       </div>
       <div class="hopLoc">
         <button id="gvNutChth" class="btn btn-danger btn-sm fw-bold nhapTuyChinh" style="color: white; border: none; padding: 4px 10px; display: flex; align-items: center;" onclick="gvXlmChth(this)">Chuyển tháng mới</button>
-        <select id="gvLocNam" class="form-select nhapTuyChinh" style="width: 140px;">
+        <!-- ĐÃ KHÓA Ô CHỌN NĂM HỌC (disabled) -->
+        <select id="gvLocNam" class="form-select nhapTuyChinh" style="width: 140px;" disabled>
           <option value="2024-2025">2024-2025</option><option value="2025-2026" selected>2025-2026</option><option value="2026-2027">2026-2027</option>
         </select>
         <select id="gvLocThang" class="form-select nhapTuyChinh" style="width: 120px;">
@@ -42,7 +43,7 @@
 
     <div class="hopBang">
       <table id="gvBangNv">
-        <thead>迭代<th style="width: 40px;">Xóa</th><th style="width: 40px;">TT</th><th style="width: 35%;">Nội dung công việc</th><th style="width: 120px;">Thời gian HT</th><th style="width: 15%;">Loại tiến độ</th><th style="width: 15%;">Người thực hiện</th><th style="width: 20%;">Ghi chú</th></tr></thead>
+        <thead><tr><th style="width: 40px;">Xóa</th><th style="width: 40px;">TT</th><th style="width: 35%;">Nội dung công việc</th><th style="width: 120px;">Thời gian HT</th><th style="width: 15%;">Loại tiến độ</th><th style="width: 15%;">Người thực hiện</th><th style="width: 20%;">Ghi chú</th></tr></thead>
         <tbody id="gvThanBang"></tbody>
       </table>
       <button class="btn btn-success nutThem" onclick="gvThemDong()">+ Thêm dòng mới</button>
@@ -176,8 +177,6 @@
         }
 
         // ========== THUẬT TOÁN ĐIỀU KHIỂN NÚT DỰA TRÊN QUYỀN (CỘT E) ==========
-        // Lấy quyền từ canbHientai (đã có sẵn từ khi đăng nhập)
-        // Nếu chưa có, thử lấy từ window.PGV_COT_E (dự phòng)
         let quyen = '';
         if (typeof canbHientai !== 'undefined' && canbHientai.quyen) {
             quyen = canbHientai.quyen;
@@ -190,17 +189,14 @@
         const isAdmin = (typeof canbHientai !== 'undefined' && canbHientai.qchon === true);
 
         if (quyen === 'x') {
-            // Cột E = "x" : Ẩn cả hai nút
             if (btnChung) btnChung.style.display = 'none';
             if (btnChuyenThang) btnChuyenThang.style.display = 'none';
         } 
         else if (quyen === 'xx') {
-            // Cột E = "xx" : Ẩn nút cập nhật chung, HIỂN nút chuyển tháng
             if (btnChung) btnChung.style.display = 'none';
-            if (btnChuyenThang) btnChuyenThang.style.display = 'flex';   // hiển thị theo style gốc
+            if (btnChuyenThang) btnChuyenThang.style.display = 'flex';
         }
         else {
-            // Không có quyền đặc biệt: hiển thị theo quyền admin
             if (btnChung) {
                 btnChung.style.display = isAdmin ? 'inline-block' : 'none';
             }
@@ -209,7 +205,6 @@
             }
         }
 
-        // Ghi log ra console để dễ kiểm tra
         console.log("[GiaoViec] quyen =", quyen, "| isAdmin =", isAdmin, 
                     "| btnChung display =", btnChung ? btnChung.style.display : 'null',
                     "| btnChuyenThang display =", btnChuyenThang ? btnChuyenThang.style.display : 'null');
@@ -251,7 +246,6 @@
         
         const cv = (bltd === "Cho vượt tiến độ") ? "selected" : "";
         
-        // Đã sửa lỗi btnxosa -> btnxoa
         tr.innerHTML = `<td class="oHdong">${btnxoa}</td><td class="text-center"><input type="text" class="form-control text-center oSttGv" value="${bstt}" readonly></td><td><textarea class="form-control oNdGv" placeholder="Nhập nội dung..." rows="1" oninput="gvCoDan(this)" onfocus="gvCoDan(this)"></textarea></td><td><input type="text" class="form-control text-center oNgayGv" placeholder="dd/mm/yyyy" onkeyup="gvDinhDangNgay(this, event)"></td><td><select class="form-select text-center oTdoGv" ${dcb}><option value="">--Chọn--</option><option value="Cho vượt tiến độ" ${cv}>Cho vượt tiến độ</option></select></td><td><select class="form-select oNnghanGv" onchange="gvDoiNgn(this)" ${dcb}>${lchon}</select></td><td><textarea class="form-control text-center oGchuGv" placeholder="Ghi chú" rows="1" oninput="gvCoDan(this)" onfocus="gvCoDan(this)"></textarea></td>`; 
         
         tr.querySelector('.oNdGv').value = bnd;
