@@ -154,18 +154,14 @@
     function gvKhiTaiXong(dl) {
         gvDatTai(false); 
         
-        // Xử lý năm học: lấy trực tiếp từ dl.nam (đã được backend đọc từ GIAOVIEC!C7)
-        let namValue = dl.nam;
-        console.log("[DEBUG] Năm học từ backend (GIAOVIEC!C7):", namValue);
-        if (!namValue || namValue.trim() === "") {
-            console.warn("⚠️ Năm học từ backend bị rỗng. Kiểm tra ô C7 sheet GIAOVIEC.");
-            gvTbaoNhanh('cbh', "Không nhận được năm học từ hệ thống. Vui lòng kiểm tra ô C7 sheet GIAOVIEC.");
-            // Giữ nguyên giá trị mặc định (2025-2026) trên dropdown
+        // Chỉ lấy năm học từ backend (đã đọc từ GIAOVIEC!C7)
+        if (dl.nam) {
+            document.getElementById('gvLocNam').value = dl.nam;
         } else {
-            document.getElementById('gvLocNam').value = namValue;
+            // Nếu backend không trả về (rất hiếm), giữ nguyên giá trị mặc định 2025-2026
+            console.warn("Không nhận được năm học từ backend, giữ giá trị mặc định.");
         }
-        
-        if(dl.thang) document.getElementById('gvLocThang').value = dl.thang;
+        if (dl.thang) document.getElementById('gvLocThang').value = dl.thang;
         
         const bns = dl.dlbang;
         const tb = document.getElementById('gvThanBang'); 
@@ -223,6 +219,7 @@
         console.log("[GiaoViec] quyen =", quyen, "| isAdmin =", isAdmin);
     }
 
+    // Các hàm xử lý bảng (giữ nguyên)
     function gvVeDong(dong = null) {
         const tb = document.getElementById('gvThanBang');
         const tr = document.createElement('tr');
@@ -314,7 +311,6 @@
         if (!gt) return; 
         
         const gth = gt.toUpperCase();
-
         const nm = document.getElementById('gvLocNam').value; 
         
         let tngn = ""; 
@@ -339,7 +335,6 @@
         gvGoiMayChu(nm, th_htai, nvx, ptu, gth);
     }
 
-    // ===== CẬP NHẬT NHIỆM VỤ CHUNG (BATCH TOÀN BỘ DANH SÁCH) =====
     function gvCapNhatNhiemVuChung() {
         const nm = document.getElementById('gvLocNam').value;
         const th_htai = document.getElementById('gvLocThang').value;
@@ -373,7 +368,7 @@
             gvDatTai(false);
             if (kq && kq.ttai === 'tcong') {
                 gvTbaoNhanh('tcong', kq.tbao);
-                setTimeout(gvLaydlGoc, 1000); // tải lại dữ liệu
+                setTimeout(gvLaydlGoc, 1000);
             } else {
                 gvTbaoNhanh('loi', "Lỗi Server: " + (kq ? kq.tbao : "Unknown"));
             }
