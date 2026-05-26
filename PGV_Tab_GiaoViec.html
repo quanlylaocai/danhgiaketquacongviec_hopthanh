@@ -5,11 +5,11 @@
   #khuGvChinh .hopLoc { display: flex; gap: 10px; align-items: center; }
   #khuGvChinh .nhapTuyChinh { font-size: 16px; font-weight: bold; color: #0d6efd; border: 1px solid #ced4da; padding: 4px 10px; border-radius: 4px; height: 34px; }
   #khuGvChinh .hopBang { background: white; border-radius: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); padding: 5px; }
-  #khuGvChinh table { width: 100%; border-collapse: collapse; table-layout: auto; }  /* ĐỔI fixed → auto */
+  #khuGvChinh table { width: 100%; border-collapse: collapse; table-layout: auto; }
   #khuGvChinh th { background-color: #0d6efd; color: white; text-align: center; padding: 8px 4px; border: 1px solid #dee2e6; vertical-align: middle; font-size: 13px; }
-  #khuGvChinh td { border: 1px solid #999; padding: 0 !important; vertical-align: top; }  /* top để textarea dễ giãn */
+  #khuGvChinh td { border: 1px solid #999; padding: 0 !important; vertical-align: top; }
   
-  /* === TEXTAREA TỰ ĐỘNG GIÃN === */
+  /* TEXTAREA - KHÔNG CÓ BẤT KỲ RÀNG BUỘC CHIỀU CAO NÀO */
   #gvBangNv textarea.form-control {
     font-family: 'Times New Roman', Times, serif;
     font-size: 14px;
@@ -21,7 +21,7 @@
     margin: 0;
     background-color: transparent;
     resize: none;
-    overflow-y: visible !important;   /* Quan trọng: hiển thị toàn bộ nội dung */
+    overflow-y: visible !important;
     min-height: 35px;
     height: auto !important;
     line-height: 1.4;
@@ -87,33 +87,21 @@
     let tdtaiXoaCho = null; 
     let ptuChoXoa = null;
 
-    // ================= GIÃN DÒNG MẠNH MẼ =================
+    // HÀM GIÃN DÒNG - TẬP TRUNG VÀO TEXTAREA
     function gvResizeTextarea(tx) {
         if (!tx) return;
-        // Lấy dòng (tr) và ô (td) chứa textarea
-        var td = tx.parentNode;
-        var tr = tx.closest('tr');
-        
-        // Reset chiều cao
+        // Lưu nội dung để debug (không cần thiết)
+        var oldHeight = tx.style.height;
+        // Reset chiều cao về auto
         tx.style.height = 'auto';
-        // Force reflow
+        // Force reflow - bắt trình duyệt tính toán lại
         void tx.offsetHeight;
-        
-        // Lấy chiều cao thực tế của nội dung
+        // Lấy chiều cao thực tế
         var newHeight = tx.scrollHeight;
+        // Đảm bảo tối thiểu 35px
         if (newHeight < 35) newHeight = 35;
-        // Không giới hạn tối đa để hiển thị hết nội dung
+        // KHÔNG GIỚI HẠN TỐI ĐA - để hiển thị hết nội dung
         tx.style.height = newHeight + 'px';
-        
-        // Điều chỉnh chiều cao của ô td (nếu cần)
-        if (td && td.tagName === 'TD') {
-            td.style.height = 'auto';
-        }
-        // Điều chỉnh lại STT nếu cần
-        if (tr) {
-            var sttCell = tr.querySelector('.oSttGv');
-            if (sttCell) sttCell.style.height = newHeight + 'px';
-        }
     }
 
     function gvResizeAllTextareas() {
@@ -144,7 +132,7 @@
 
     setTimeout(function() { gvTaiCanb(); }, 500);
 
-    function gvTbaoNhanh(loai, tb) { /* giữ nguyên */ 
+    function gvTbaoNhanh(loai, tb) {
         const mh = document.getElementById('gvHopThoaiTb');
         const hd = document.getElementById('gvDauHtTb');
         const td = document.getElementById('gvTdeHtTb');
@@ -176,7 +164,7 @@
         hm.show();
     }
 
-    function gvDatTai(dt, tbt) { /* giữ nguyên */ 
+    function gvDatTai(dt, tbt) {
         const mh = document.getElementById('gvLopPhuTai');
         const ct = document.getElementById('gvChuTai');
         const vq = mh.querySelector('.spinner-border');
@@ -196,16 +184,16 @@
     }
 
     function gvTaiCanb() { 
-        gvDatTai(true, "Đang tải danh sách nhân sự (để giao việc)..."); 
+        gvDatTai(true, "Đang tải danh sách nhân sự..."); 
         khachApi.gvLaydsCanb(
             function(dl) { dsCanbgv = dl; gvLaydlGoc(); }, 
-            function(l) { gvTbaoNhanh('loi', "Lỗi tải nhân sự: " + l.message); gvDatTai(false); }
+            function(l) { gvTbaoNhanh('loi', l.message); gvDatTai(false); }
         ); 
     }
 
     function gvLaydlGoc() { 
-        gvDatTai(true, "✨ Đang cập nhật nhiệm vụ mới ✨"); 
-        khachApi.gvLaydlBdau(gvKhiTaiXong, function(l) { gvTbaoNhanh('loi', "Lỗi tải dữ liệu: " + l.message); gvDatTai(false); }); 
+        gvDatTai(true, "✨ Đang cập nhật nhiệm vụ..."); 
+        khachApi.gvLaydlBdau(gvKhiTaiXong, function(l) { gvTbaoNhanh('loi', l.message); gvDatTai(false); }); 
     }
 
     function gvKhiTaiXong(dl) {
@@ -224,15 +212,17 @@
             if (!isNaN(dcstt)) ddemDong = dcstt + 1; 
             setTimeout(() => { 
                 gvResizeAllTextareas();
+                // Gắn sự kiện click cho từng textarea
                 document.querySelectorAll('#gvBangNv textarea.form-control').forEach(function(tx) {
                     if (!tx.hasClickHandler) {
                         tx.hasClickHandler = true;
-                        tx.addEventListener('click', function() {
+                        tx.addEventListener('click', function(e) {
+                            e.stopPropagation();
                             setTimeout(function() { gvResizeTextarea(tx); }, 10);
                         });
                     }
                 });
-            }, 100); 
+            }, 150); 
         } else { 
             gvVeDong(); 
         }
@@ -271,7 +261,7 @@
                 }
             }
         }
-        setTimeout(function() { gvResizeTextarea(textarea); }, 10);
+        setTimeout(function() { gvResizeTextarea(textarea); }, 20);
     }
 
     function gvVeDong(dong = null) {
@@ -308,7 +298,13 @@
         
         const cv = (bltd === "Cho vượt tiến độ") ? "selected" : "";
         let textareaOnInput = dong === null ? 'oninput="gvCoDan(this); gvKiemTraDauSao(this)"' : 'oninput="gvCoDan(this); gvKiemTraDauSao(this)"';
-        tr.innerHTML = `<td class="oHdong">${btnxoa}</td><td class="text-center"><input type="text" class="form-control text-center oSttGv" value="${bstt}" readonly></td><td style="padding:0 !important;"><textarea class="form-control oNdGv" placeholder="Nhập nội dung..." rows="1" ${textareaOnInput} onfocus="gvCoDan(this)"></textarea></td><td class="text-center"><input type="text" class="form-control text-center oNgayGv" placeholder="dd/mm/yyyy" onkeyup="gvDinhDangNgay(this, event)"></td><td class="text-center"><select class="form-select text-center oTdoGv" ${dcb} ${dcb ? 'disabled' : ''}><option value="">--Chọn--</option><option value="Cho vượt tiến độ" ${cv}>Cho vượt tiến độ</option></select></td><td><select class="form-select oNnghanGv" onchange="gvDoiNgn(this)" ${dcb} ${dcb ? 'disabled' : ''}>${lchon}</select></td><td><textarea class="form-control text-center oGchuGv" placeholder="Ghi chú" rows="1" oninput="gvCoDan(this)" onfocus="gvCoDan(this)"></textarea></td>`;
+        tr.innerHTML = `<td class="oHdong text-center">${btnxoa}</td>
+                        <td class="text-center"><input type="text" class="form-control text-center oSttGv" value="${bstt}" readonly style="width:40px;"></td>
+                        <td style="padding:0 !important;"><textarea class="form-control oNdGv" placeholder="Nhập nội dung..." rows="1" ${textareaOnInput} onfocus="gvCoDan(this)"></textarea></td>
+                        <td class="text-center"><input type="text" class="form-control text-center oNgayGv" placeholder="dd/mm/yyyy" onkeyup="gvDinhDangNgay(this, event)"></td>
+                        <td class="text-center"><select class="form-select text-center oTdoGv" ${dcb} ${dcb ? 'disabled' : ''}><option value="">--Chọn--</option><option value="Cho vượt tiến độ" ${cv}>Cho vượt tiến độ</option></select></td>
+                        <td><select class="form-select oNnghanGv" onchange="gvDoiNgn(this)" ${dcb} ${dcb ? 'disabled' : ''}>${lchon}</select></td>
+                        <td><textarea class="form-control text-center oGchuGv" placeholder="Ghi chú" rows="1" oninput="gvCoDan(this)" onfocus="gvCoDan(this)"></textarea></td>`;
         
         tr.querySelector('.oNdGv').value = bnd;
         tr.querySelector('.oNgayGv').value = bhc;
@@ -339,10 +335,11 @@
         
         const txtArea = tr.querySelector('.oNdGv');
         if (txtArea) {
-            txtArea.addEventListener('click', function() {
+            txtArea.addEventListener('click', function(e) {
+                e.stopPropagation();
                 setTimeout(function() { gvResizeTextarea(txtArea); }, 10);
             });
-            setTimeout(function() { gvResizeTextarea(txtArea); }, 50);
+            setTimeout(function() { gvResizeTextarea(txtArea); }, 100);
         }
     }
     
@@ -364,14 +361,14 @@
     function gvThemDong() { 
         ddemDong = document.querySelectorAll('#gvThanBang tr').length + 1; 
         gvVeDong(null); 
-        setTimeout(gvResizeAllTextareas, 50);
+        setTimeout(gvResizeAllTextareas, 100);
     }
     
     function gvXoaDong(btn) { 
         if (window.PGV_GIAO_VIEC_READONLY === true) return;
         btn.closest('tr').remove(); 
         gvDanhLaiStt(); 
-        setTimeout(gvResizeAllTextareas, 50);
+        setTimeout(gvResizeAllTextareas, 100);
     }
     
     function gvDanhLaiStt() { 
@@ -465,7 +462,7 @@
                 ptu.style.backgroundColor = '#d1e7dd'; 
                 ptu.style.borderColor = '#badbcc'; 
                 ptu.style.fontWeight = 'bold'; 
-                if (hth === 'DELETE') { tdtaiXoaCho = null; ptuChoXoa = null; setTimeout(gvLaydlGoc, 1000); } 
+                if (hth === 'DELETE') { tdtaiXoaCho = null; ptuChoXoa = null; setTimeout(gvLaydlGoc(), 1000); } 
             } else { 
                 gvTbaoNhanh('loi', "Lỗi Server: " + (kq ? kq.tbao : "Unkown")); 
                 if (ptu.tagName !== 'BUTTON') ptu.value = ""; 
