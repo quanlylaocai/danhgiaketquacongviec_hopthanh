@@ -80,7 +80,6 @@
         border-radius: 4px;
     }
     .id-sheet-input {
-        /* Đảm bảo hiển thị đúng dạng text, giữ số 0 đầu */
         font-family: monospace;
     }
     .quyen-select {
@@ -178,6 +177,7 @@
             getToken = function() { return (typeof PGV_TOKEN !== 'undefined') ? PGV_TOKEN : ''; };
         }
         
+        // Hàm gọi API đã sửa lỗi post
         function callApi(action, data, onSuccess, onError) {
             if (!API_URL) {
                 if (onError) onError(new Error("Không tìm thấy API"));
@@ -185,27 +185,39 @@
             }
             var payload = { hdong: action, token: getToken() };
             for (var k in data) payload[k] = data[k];
+            
             fetch(API_URL, {
                 method: 'POST',
-                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                headers: { 'Content-Type': 'application/json' },  // sửa thành JSON
                 body: JSON.stringify(payload)
             })
-            .then(function(res) { return res.ok ? res.text() : Promise.reject('HTTP ' + res.status); })
+            .then(function(res) { 
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                return res.text();
+            })
             .then(function(txt) {
-                var json = JSON.parse(txt);
-                if (json.ttai === 'loi') throw new Error(json.tbao);
+                var json;
+                try {
+                    json = JSON.parse(txt);
+                } catch(e) {
+                    throw new Error('Phản hồi không phải JSON: ' + txt.substring(0, 100));
+                }
+                if (json.ttai === 'loi') throw new Error(json.tbao || 'Lỗi không xác định');
                 onSuccess(json);
             })
-            .catch(function(err) { if (onError) onError(err); });
+            .catch(function(err) { 
+                if (onError) onError(err); 
+                else console.error(err);
+            });
         }
         
+        // Các action đã được sửa: bỏ dấu cách
         function layDanhSach() {
             return new Promise(function(resolve, reject) {
-                callApi('laydlkhai bao', {}, function(res) {
+                callApi('laydlkhaibao', {}, function(res) {
                     var raw = res.dliu || [];
                     var list = raw.map(function(row) {
                         return {
-                            // Ép kiểu string để đảm bảo ID sheet dạng text, giữ số 0 đầu
                             idSheet: (row[0] !== undefined && row[0] !== null) ? String(row[0]).trim() : '',
                             email: (row[1] || '').trim(),
                             tenHienThi: (row[2] || '').trim(),
@@ -220,14 +232,12 @@
         function capNhatDanhSach(list) {
             return new Promise(function(resolve, reject) {
                 var dataToSave = list.map(function(item) {
-                    // Đảm bảo ID sheet luôn được lưu dưới dạng chuỗi
                     return [String(item.idSheet), item.email, item.tenHienThi, item.quyen];
                 });
-                callApi('capnhatkhai bao', { dliu: dataToSave }, function(res) { resolve(res); }, reject);
+                callApi('capnhatkhaibao', { dliu: dataToSave }, function(res) { resolve(res); }, reject);
             });
         }
         
-        // Hàm xóa sheet riêng theo tên
         function xoaSheetCaNhan(tenSheet) {
             return new Promise(function(resolve, reject) {
                 if (!tenSheet || String(tenSheet).trim() === '') {
@@ -238,7 +248,7 @@
             });
         }
         
-        // ========== ĐỒNG BỘ NĂM HỌC VỚI Ô C7 SHEET GIAOVIEC ==========
+        // Đồng bộ năm học với ô C7 sheet GIAOVIEC
         function layNamHocTuGIAOVIEC() {
             return new Promise(function(resolve, reject) {
                 callApi('laygiaovieccell', { sheet: 'GIAOVIEC', cell: 'C7' }, function(res) {
@@ -255,7 +265,6 @@
                 }, reject);
             });
         }
-        // =============================================================
         
         var currentList = [];
         var $ = function(sel) { return document.querySelector(sel); };
@@ -280,7 +289,7 @@
             if (!tbody) return;
             tbody.innerHTML = '';
             if (currentList.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" class="text-center">Chưa có dữ liệu. Nhấn "Thêm mới" để tạo.2%</table></tr>';
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center">Chưa có dữ liệu. Nhấn "Thêm mới" để tạo.2%</tr></tr>';
                 return;
             }
             for (var i = 0; i < currentList.length; i++) {
@@ -324,18 +333,16 @@
                 var tdStt = document.createElement('td');
                 tdStt.className = 'stt-cell';
                 tdStt.innerText = stt;
-                // ID sheet - xử lý text, không ép số
+                // ID sheet
                 var tdId = document.createElement('td');
                 var inpId = document.createElement('input');
                 inpId.type = 'text';
                 inpId.className = 'id-sheet-input';
-                // Hiển thị đúng chuỗi (kể cả "0123" vẫn giữ)
                 inpId.value = item.idSheet;
                 inpId.setAttribute('data-field', 'idSheet');
                 inpId.setAttribute('data-idx', i);
                 inpId.placeholder = 'VD: 001, GV02, 0123';
                 inpId.autocomplete = 'off';
-                inpId.inputMode = 'text'; // khuyến khích nhập text
                 tdId.appendChild(inpId);
                 // Email
                 var tdEmail = document.createElement('td');
@@ -381,14 +388,11 @@
                 tbody.appendChild(tr);
             }
             
-            // Gắn sự kiện thay đổi: luôn xử lý dưới dạng chuỗi
+            // Gắn sự kiện
             $$('.id-sheet-input').forEach(function(inp) {
                 inp.onchange = function(e) {
                     var idx = parseInt(this.getAttribute('data-idx'));
-                    // Lấy giá trị dạng text gốc, không trim ở đây (để giữ khoảng trắng đầu? nhưng nên trim)
-                    var newVal = this.value;
-                    // Ép thành string và trim (nhưng vẫn giữ số 0 đầu vì là string)
-                    newVal = String(newVal).trim();
+                    var newVal = String(this.value).trim();
                     var lowerNew = newVal.toLowerCase();
                     var duplicate = currentList.some(function(item, i) { return i !== idx && String(item.idSheet).toLowerCase() === lowerNew; });
                     if (duplicate) {
@@ -465,10 +469,8 @@
             btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Đang lưu...';
             btn.disabled = true;
             try {
-                // 1. Lưu danh sách quyền (ID sheet dạng text)
                 await capNhatDanhSach(currentList);
                 
-                // 2. Đồng bộ năm học vào ô C7 sheet GIAOVIEC
                 var namHocInput = $('#namHocInput');
                 if (namHocInput) {
                     var namHocValue = namHocInput.value.trim();
@@ -476,11 +478,10 @@
                         await capNhatNamHocVaoGIAOVIEC(namHocValue);
                     }
                 }
-                
-                alert('✅ Thành công\nĐã cập nhật dữ liệu quyền (ID sheet dạng text) và năm học (ô C7 sheet GIAOVIEC).');
+                alert('✅ Thành công\nĐã cập nhật dữ liệu quyền và năm học (ô C7 sheet GIAOVIEC).');
                 await taiLaiDuLieu();
             } catch (err) {
-                alert('❌ Lỗi lưu\n' + err.message);
+                alert('❌ Lỗi lưu: ' + err.message);
             } finally {
                 btn.innerHTML = originalHtml;
                 btn.disabled = false;
@@ -500,16 +501,13 @@
             }
         }
         
-        // Khởi tạo năm học: ưu tiên đọc từ ô C7 sheet GIAOVIEC
         async function khoiTaoNamHoc() {
             var namHocInput = $('#namHocInput');
             if (!namHocInput) return;
-            
             var currentYear = new Date().getFullYear();
             var currentMonth = new Date().getMonth() + 1;
             var startYear = (currentMonth >= 7) ? currentYear : currentYear - 1;
             var defaultNamHoc = startYear + '-' + (startYear + 1);
-            
             try {
                 var giaTriTuSheet = await layNamHocTuGIAOVIEC();
                 if (giaTriTuSheet && giaTriTuSheet.match(/^\d{4}-\d{4}$/)) {
@@ -520,14 +518,12 @@
             } catch (err) {
                 console.warn('Không thể đọc năm học từ GIAOVIEC, dùng fallback', err);
             }
-            
             var saved = localStorage.getItem('namHocQuyen');
             if (saved && saved.match(/^\d{4}-\d{4}$/)) {
                 namHocInput.value = saved;
             } else {
                 namHocInput.value = defaultNamHoc;
             }
-            
             namHocInput.addEventListener('change', function() {
                 var val = this.value.trim();
                 if (val.match(/^\d{4}-\d{4}$/)) {
@@ -538,9 +534,8 @@
             });
         }
         
-        // Khởi tạo
         if (!API_URL) {
-            $('#quyenTableBodyPQ').innerHTML = '<tr><td colspan="6" class="text-danger text-center">Không tìm thấy API. Vui lòng tải lại trang chính.2%<tr></tr>';
+            $('#quyenTableBodyPQ').innerHTML = '<tr><td colspan="6" class="text-danger text-center">Không tìm thấy API. Vui lòng tải lại trang chính.2%</td></tr>';
             return;
         }
         
