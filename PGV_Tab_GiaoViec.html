@@ -42,9 +42,7 @@
 
     <div class="hopBang">
       <table id="gvBangNv">
-        <thead>贩<th style="width: 40px;">Xóa</th><th style="width: 40px;">TT</th><th style="width: 35%;">Nội dung công việc</th><th style="width: 120px;">Thời gian HT</th><th style="width: 15%;">Loại tiến độ</th><th style="width: 15%;">Người thực hiện</th><th style="width: 20%;">Ghi chú</th>\]
-
-      </thead>
+        <thead>迭代<th style="width: 40px;">Xóa</th><th style="width: 40px;">TT</th><th style="width: 35%;">Nội dung công việc</th><th style="width: 120px;">Thời gian HT</th><th style="width: 15%;">Loại tiến độ</th><th style="width: 15%;">Người thực hiện</th><th style="width: 20%;">Ghi chú</th></tr></thead>
         <tbody id="gvThanBang"></tbody>
       </table>
       <button class="btn btn-success nutThem" onclick="gvThemDong()">+ Thêm dòng mới</button>
@@ -177,43 +175,44 @@
             gvVeDong(); 
         }
 
-        // ================== XỬ LÝ HIỂN THỊ NÚT THEO CỘT E ==================
-        // Lấy giá trị cột E: ưu tiên từ dl.cotE, sau đó từ biến toàn cục
-        let cotE = (dl && dl.cotE !== undefined) ? dl.cotE : (window.PGV_COT_E || '');
-        // Chuẩn hóa về string và trim
-        cotE = String(cotE).trim();
+        // ========== THUẬT TOÁN ĐIỀU KHIỂN NÚT DỰA TRÊN QUYỀN (CỘT E) ==========
+        // Lấy quyền từ canbHientai (đã có sẵn từ khi đăng nhập)
+        // Nếu chưa có, thử lấy từ window.PGV_COT_E (dự phòng)
+        let quyen = '';
+        if (typeof canbHientai !== 'undefined' && canbHientai.quyen) {
+            quyen = canbHientai.quyen;
+        } else if (window.PGV_COT_E) {
+            quyen = window.PGV_COT_E;
+        }
         
         const btnChung = document.getElementById('btnCapNhatChung');
         const btnChuyenThang = document.getElementById('gvNutChth');
         const isAdmin = (typeof canbHientai !== 'undefined' && canbHientai.qchon === true);
-        
-        // Log để debug
-        console.log("[GiaoViec] cotE = '" + cotE + "', isAdmin = " + isAdmin);
-        
-        // Logic theo yêu cầu:
-        // - Nếu cotE === 'x' : ẩn cả hai nút
-        // - Nếu cotE === 'xx': ẩn nút cập nhật chung, hiện nút chuyển tháng
-        // - Ngược lại: hiển thị theo quyền admin
-        if (cotE === 'x') {
+
+        if (quyen === 'x') {
+            // Cột E = "x" : Ẩn cả hai nút
             if (btnChung) btnChung.style.display = 'none';
             if (btnChuyenThang) btnChuyenThang.style.display = 'none';
-            console.log("  => E='x': Ẩn cả hai nút");
         } 
-        else if (cotE === 'xx') {
-            if (btnChung) btnChung.style.display = 'none';   // Ẩn nút cập nhật chung
-            if (btnChuyenThang) btnChuyenThang.style.display = 'flex'; // Hiện nút chuyển tháng
-            console.log("  => E='xx': Ẩn nút cập nhật chung, hiện nút chuyển tháng");
+        else if (quyen === 'xx') {
+            // Cột E = "xx" : Ẩn nút cập nhật chung, HIỂN nút chuyển tháng
+            if (btnChung) btnChung.style.display = 'none';
+            if (btnChuyenThang) btnChuyenThang.style.display = 'flex';   // hiển thị theo style gốc
         }
         else {
-            // Trường hợp bình thường: hiển thị theo quyền admin
+            // Không có quyền đặc biệt: hiển thị theo quyền admin
             if (btnChung) {
                 btnChung.style.display = isAdmin ? 'inline-block' : 'none';
             }
             if (btnChuyenThang) {
                 btnChuyenThang.style.display = isAdmin ? 'flex' : 'none';
             }
-            console.log("  => E khác x/xx: hiển thị theo admin = " + isAdmin);
         }
+
+        // Ghi log ra console để dễ kiểm tra
+        console.log("[GiaoViec] quyen =", quyen, "| isAdmin =", isAdmin, 
+                    "| btnChung display =", btnChung ? btnChung.style.display : 'null',
+                    "| btnChuyenThang display =", btnChuyenThang ? btnChuyenThang.style.display : 'null');
         // ================================================================
     }
 
@@ -252,6 +251,7 @@
         
         const cv = (bltd === "Cho vượt tiến độ") ? "selected" : "";
         
+        // Đã sửa lỗi btnxosa -> btnxoa
         tr.innerHTML = `<td class="oHdong">${btnxoa}</td><td class="text-center"><input type="text" class="form-control text-center oSttGv" value="${bstt}" readonly></td><td><textarea class="form-control oNdGv" placeholder="Nhập nội dung..." rows="1" oninput="gvCoDan(this)" onfocus="gvCoDan(this)"></textarea></td><td><input type="text" class="form-control text-center oNgayGv" placeholder="dd/mm/yyyy" onkeyup="gvDinhDangNgay(this, event)"></td><td><select class="form-select text-center oTdoGv" ${dcb}><option value="">--Chọn--</option><option value="Cho vượt tiến độ" ${cv}>Cho vượt tiến độ</option></select></td><td><select class="form-select oNnghanGv" onchange="gvDoiNgn(this)" ${dcb}>${lchon}</select></td><td><textarea class="form-control text-center oGchuGv" placeholder="Ghi chú" rows="1" oninput="gvCoDan(this)" onfocus="gvCoDan(this)"></textarea></td>`; 
         
         tr.querySelector('.oNdGv').value = bnd;
