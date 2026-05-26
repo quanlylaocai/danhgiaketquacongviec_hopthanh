@@ -29,7 +29,7 @@
       </div>
       <div class="hopLoc">
         <button id="gvNutChth" class="btn btn-danger btn-sm fw-bold nhapTuyChinh" style="color: white; border: none; padding: 4px 10px; display: flex; align-items: center;" onclick="gvXlmChth(this)">Chuyển tháng mới</button>
-        <!-- Ô năm học bị khóa, chỉ hiển thị -->
+        <!-- Ô năm học bị khóa, không cho chọn -->
         <select id="gvLocNam" class="form-select nhapTuyChinh" style="width: 140px;" disabled>
           <option value="2024-2025">2024-2025</option><option value="2025-2026" selected>2025-2026</option><option value="2026-2027">2026-2027</option>
         </select>
@@ -63,6 +63,10 @@
     let ddemDong = 1; 
     let tdtaiXoaCho = null; 
     let ptuChoXoa = null;
+
+    // Khởi tạo: lấy năm học dự phòng từ localStorage (nếu có)
+    let namMacDinh = localStorage.getItem('gv_nam_hoc') || '2025-2026';
+    document.getElementById('gvLocNam').value = namMacDinh;
 
     setTimeout(function() { 
         gvTaiCanb(); 
@@ -146,32 +150,31 @@
         ); 
     }
 
-    // Hàm lấy năm học từ ô B2 sheet KHAIBAO (dự phòng, nếu backend chưa đồng bộ)
-    function gvLayNamHocTuB2(callback) {
-        if (typeof khachApi !== 'undefined' && khachApi.layDlKhaiBao) {
-            // Thử lấy từ API laydlkhai bao (trả về mảng các dòng)
-            khachApi.layDlKhaiBao(function(data) {
-                // data là mảng các dòng từ dòng 5, mỗi dòng [idSheet, email, ten, quyen]
-                // Không có B2. Vậy ta không dùng được. Thay vào đó, gọi một API mới nếu có.
-                // Ở đây ta bỏ qua, coi như không có.
-                if (callback) callback(null);
-            }, function() { if (callback) callback(null); });
-        } else {
-            if (callback) callback(null);
-        }
-    }
-
     function gvKhiTaiXong(dl) {
         gvDatTai(false); 
         
-        // Xử lý năm học: nếu dl.nam rỗng, hiển thị cảnh báo và giữ nguyên giá trị cũ (nếu có)
+        // Xử lý năm học từ backend
         let namValue = dl.nam;
+        console.log("[DEBUG] Năm học từ backend:", namValue);
+        
         if (!namValue || namValue.trim() === "") {
             console.warn("⚠️ Năm học từ backend bị rỗng. Kiểm tra KHAIBAO!B2 hoặc GIAOVIEC!C7.");
-            gvTbaoNhanh('cbh', "Không nhận được năm học từ hệ thống. Vui lòng kiểm tra ô B2 sheet KHAIBAO.");
-            // Không cập nhật dropdown, giữ nguyên giá trị hiển thị (có thể đang là mặc định 2025-2026)
+            // Thử lấy từ localStorage (đã được lưu từ các lần giao việc trước)
+            let localNam = localStorage.getItem('gv_nam_hoc');
+            if (localNam && localNam.trim() !== "") {
+                document.getElementById('gvLocNam').value = localNam;
+                console.log("Đã khôi phục năm học từ localStorage:", localNam);
+                gvTbaoNhanh('cbh', "Năm học được khôi phục từ bộ nhớ tạm. Vui lòng kiểm tra lại ô B2 sheet KHAIBAO để đồng bộ chính xác.");
+            } else {
+                // Giữ nguyên giá trị mặc định đã set ban đầu (2025-2026)
+                console.log("Giữ nguyên năm học mặc định:", document.getElementById('gvLocNam').value);
+                gvTbaoNhanh('cbh', "Không nhận được năm học từ hệ thống. Đang sử dụng năm mặc định. Vui lòng kiểm tra ô B2 sheet KHAIBAO.");
+            }
         } else {
             document.getElementById('gvLocNam').value = namValue;
+            // Lưu vào localStorage để dùng cho các lần sau nếu backend lại bị lỗi
+            localStorage.setItem('gv_nam_hoc', namValue);
+            console.log("Đã cập nhật năm học từ backend:", namValue);
         }
         
         if(dl.thang) document.getElementById('gvLocThang').value = dl.thang;
@@ -232,7 +235,7 @@
         console.log("[GiaoViec] quyen =", quyen, "| isAdmin =", isAdmin);
     }
 
-    // Các hàm xử lý bảng (giữ nguyên từ bản gốc)
+    // ================= CÁC HÀM XỬ LÝ BẢNG (GIỮ NGUYÊN) =================
     function gvVeDong(dong = null) {
         const tb = document.getElementById('gvThanBang');
         const tr = document.createElement('tr');
@@ -458,7 +461,9 @@
                 if (kq && kq.ttai === 'tcong') { 
                     ptu.style.backgroundColor = '#d1e7dd'; 
                     ptu.style.borderColor = '#badbcc'; 
-                    ptu.style.fontWeight = 'bold'; 
+                    ptu.style.fontWeight = 'bold';
+                    // Sau khi giao việc thành công, lưu năm học vào localStorage
+                    localStorage.setItem('gv_nam_hoc', n);
                     if (hth === 'DELETE') { 
                         tdtaiXoaCho = null; 
                         ptuChoXoa = null; 
