@@ -9,7 +9,7 @@
   #khuGvChinh th { background-color: #0d6efd; color: white; text-align: center; padding: 8px 4px; border: 1px solid #dee2e6; vertical-align: middle; font-size: 13px; }
   #khuGvChinh td { border: 1px solid #999; padding: 0 !important; vertical-align: top; }
   
-  /* TEXTAREA - KHÔNG CÓ BẤT KỲ RÀNG BUỘC CHIỀU CAO NÀO */
+  /* TEXTAREA - KHÔNG GIỚI HẠN CHIỀU CAO */
   #gvBangNv textarea.form-control {
     font-family: 'Times New Roman', Times, serif;
     font-size: 14px;
@@ -87,26 +87,44 @@
     let tdtaiXoaCho = null; 
     let ptuChoXoa = null;
 
-    // HÀM GIÃN DÒNG - TẬP TRUNG VÀO TEXTAREA
+    // RESIZE TEXTAREA - TÍNH TOÁN LẠI CHIỀU CAO DỰA TRÊN NỘI DUNG
     function gvResizeTextarea(tx) {
         if (!tx) return;
-        // Lưu nội dung để debug (không cần thiết)
-        var oldHeight = tx.style.height;
-        // Reset chiều cao về auto
+        // Lưu nội dung hiện tại (không cần thiết nhưng để debug)
         tx.style.height = 'auto';
-        // Force reflow - bắt trình duyệt tính toán lại
+        // Force reflow
         void tx.offsetHeight;
-        // Lấy chiều cao thực tế
         var newHeight = tx.scrollHeight;
-        // Đảm bảo tối thiểu 35px
         if (newHeight < 35) newHeight = 35;
-        // KHÔNG GIỚI HẠN TỐI ĐA - để hiển thị hết nội dung
         tx.style.height = newHeight + 'px';
     }
 
     function gvResizeAllTextareas() {
         document.querySelectorAll('#gvBangNv textarea.form-control').forEach(function(tx) {
             gvResizeTextarea(tx);
+        });
+    }
+
+    // GẮN SỰ KIỆN DI CHUỘT VÀ FOCUS ĐỂ KÍCH HOẠT RESIZE (kể cả readonly)
+    function gvAttachResizeEvents() {
+        document.querySelectorAll('#gvBangNv textarea.form-control').forEach(function(tx) {
+            if (!tx.hasResizeEvent) {
+                tx.hasResizeEvent = true;
+                // Khi di chuột vào (mouseenter) thì resize
+                tx.addEventListener('mouseenter', function() {
+                    gvResizeTextarea(this);
+                });
+                // Khi focus (click vào) cũng resize
+                tx.addEventListener('focus', function() {
+                    gvResizeTextarea(this);
+                });
+                // Nếu là dòng mới (không readonly) thì giữ sự kiện oninput
+                if (!tx.readOnly) {
+                    tx.addEventListener('input', function() {
+                        gvResizeTextarea(this);
+                    });
+                }
+            }
         });
     }
 
@@ -212,16 +230,7 @@
             if (!isNaN(dcstt)) ddemDong = dcstt + 1; 
             setTimeout(() => { 
                 gvResizeAllTextareas();
-                // Gắn sự kiện click cho từng textarea
-                document.querySelectorAll('#gvBangNv textarea.form-control').forEach(function(tx) {
-                    if (!tx.hasClickHandler) {
-                        tx.hasClickHandler = true;
-                        tx.addEventListener('click', function(e) {
-                            e.stopPropagation();
-                            setTimeout(function() { gvResizeTextarea(tx); }, 10);
-                        });
-                    }
-                });
+                gvAttachResizeEvents();
             }, 150); 
         } else { 
             gvVeDong(); 
@@ -335,11 +344,13 @@
         
         const txtArea = tr.querySelector('.oNdGv');
         if (txtArea) {
-            txtArea.addEventListener('click', function(e) {
-                e.stopPropagation();
-                setTimeout(function() { gvResizeTextarea(txtArea); }, 10);
-            });
-            setTimeout(function() { gvResizeTextarea(txtArea); }, 100);
+            // Gắn sự kiện resize cho textarea mới
+            txtArea.addEventListener('mouseenter', function() { gvResizeTextarea(txtArea); });
+            txtArea.addEventListener('focus', function() { gvResizeTextarea(txtArea); });
+            if (!txtArea.readOnly) {
+                txtArea.addEventListener('input', function() { gvResizeTextarea(txtArea); });
+            }
+            setTimeout(function() { gvResizeTextarea(txtArea); }, 50);
         }
     }
     
@@ -361,14 +372,14 @@
     function gvThemDong() { 
         ddemDong = document.querySelectorAll('#gvThanBang tr').length + 1; 
         gvVeDong(null); 
-        setTimeout(gvResizeAllTextareas, 100);
+        setTimeout(() => { gvResizeAllTextareas(); gvAttachResizeEvents(); }, 100);
     }
     
     function gvXoaDong(btn) { 
         if (window.PGV_GIAO_VIEC_READONLY === true) return;
         btn.closest('tr').remove(); 
         gvDanhLaiStt(); 
-        setTimeout(gvResizeAllTextareas, 100);
+        setTimeout(() => { gvResizeAllTextareas(); gvAttachResizeEvents(); }, 100);
     }
     
     function gvDanhLaiStt() { 
