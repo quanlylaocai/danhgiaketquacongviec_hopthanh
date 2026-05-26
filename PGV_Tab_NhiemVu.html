@@ -42,7 +42,7 @@
          <textarea id="nhapLdoNghi" class="form-control me-3" placeholder="Nhập lý do..." style="height: 30px; min-height: 30px; font-size: 13px; border-radius: 4px; width: 300px; resize: none; overflow: hidden; white-space: pre-wrap; padding: 4px 8px;" oninput="gdang(this)" onfocus="gdang(this)" onblur="cgon(this, '30px')"></textarea>
      </div>
      <div class="d-flex align-items-center justify-content-end gap-2" style="flex: auto;">
-        <!-- Ô chọn giáo viên - hiển thị khi có cột Q -->
+        <!-- Ô chọn giáo viên - hiển thị khi có cột E -->
         <select id="hopChonGv" class="form-select form-select-sm border-primary fw-bold text-primary shadow-sm text-nowrap w-auto" style="display: none; height: 30px; font-size: 12px;" onchange="kiemTraQuyenTruyCap()">
             <option value="">-- Lựa chọn giáo viên --</option>
         </select>
@@ -76,8 +76,8 @@
 
 <script>
 let mbcMo = false;
-let cotQTonTai = false; // Biến để kiểm tra xem có cột Q hay không
-let giaTriCotQ = ""; // Lưu giá trị cột Q (xx)
+let cotETonTai = false; // Biến để kiểm tra xem có cột E hay không
+let giaTriCotE = ""; // Lưu giá trị cột E (xx)
 
 // Hàm kiểm tra quyền truy cập dựa trên dropdown giáo viên
 function kiemTraQuyenTruyCap() {
@@ -85,9 +85,9 @@ function kiemTraQuyenTruyCap() {
     var nutLuu = document.querySelector('button[onclick="xulyLuuTam()"]');
     var nutNop = document.getElementById("nutNopBcao");
     
-    if (cotQTonTai && selectGv && selectGv.style.display !== "none") {
+    if (cotETonTai && selectGv && selectGv.style.display !== "none") {
         var giaTriDuocChon = selectGv.value;
-        // Nếu có cột Q và chọn giáo viên (không phải option mặc định)
+        // Nếu có cột E và chọn giáo viên (không phải option mặc định)
         if (giaTriDuocChon && giaTriDuocChon !== "") {
             // Vô hiệu hóa nút lưu và nộp báo cáo
             if (nutLuu) nutLuu.disabled = true;
@@ -100,7 +100,7 @@ function kiemTraQuyenTruyCap() {
             if (window.PGV_IS_SELF && window.PGV_QUYEN === 'xxx') {
                 if (nutLuu) nutLuu.disabled = false;
                 if (nutNop) nutNop.disabled = false;
-            } else if (!cotQTonTai) {
+            } else if (!cotETonTai) {
                 if (nutLuu) nutLuu.disabled = false;
                 if (nutNop && mbcMo) nutNop.disabled = false;
             } else {
@@ -109,7 +109,7 @@ function kiemTraQuyenTruyCap() {
             }
         }
     } else {
-        // Không có cột Q, kích hoạt bình thường
+        // Không có cột E, kích hoạt bình thường
         if (window.PGV_IS_SELF && window.PGV_QUYEN === 'xxx') {
             if (nutLuu) nutLuu.disabled = false;
             if (nutNop && mbcMo) nutNop.disabled = false;
@@ -117,7 +117,7 @@ function kiemTraQuyenTruyCap() {
     }
 }
 
-// Hàm khởi tạo dropdown giáo viên khi có cột Q
+// Hàm khởi tạo dropdown giáo viên khi có cột E
 function khoiTaoDropdownGiaoVien(danhSachGiaoVien) {
     var selectGv = document.getElementById("hopChonGv");
     if (!selectGv) return;
@@ -141,10 +141,10 @@ function khoiTaoDropdownGiaoVien(danhSachGiaoVien) {
     }
 }
 
-// Hàm xử lý khi tải dữ liệu và phát hiện cột Q
-function xuLyCotQ(giaTriQ, danhSachGiaoVien) {
-    cotQTonTai = true;
-    giaTriCotQ = giaTriQ;
+// Hàm xử lý khi tải dữ liệu và phát hiện cột E = (xx)
+function xuLyCotE(giaTriE, danhSachGiaoVien) {
+    cotETonTai = true;
+    giaTriCotE = giaTriE;
     
     if (danhSachGiaoVien && danhSachGiaoVien.length > 0) {
         khoiTaoDropdownGiaoVien(danhSachGiaoVien);
@@ -208,8 +208,8 @@ function xulyXoaTepDc(chs) {
 }
 
 function xulyLuuTam(ath = false, xltc = null) {
-    // Kiểm tra quyền truy cập khi có cột Q
-    if (cotQTonTai) {
+    // Kiểm tra quyền truy cập khi có cột E
+    if (cotETonTai) {
         var selectGv = document.getElementById("hopChonGv");
         if (selectGv && selectGv.style.display !== "none" && selectGv.value && selectGv.value !== "") {
             if (typeof hienThongb === 'function') {
@@ -249,8 +249,8 @@ function xulyLuuTam(ath = false, xltc = null) {
 }
 
 function nopBcaoChinh() {
-    // Kiểm tra quyền truy cập khi có cột Q
-    if (cotQTonTai) {
+    // Kiểm tra quyền truy cập khi có cột E
+    if (cotETonTai) {
         var selectGv = document.getElementById("hopChonGv");
         if (selectGv && selectGv.style.display !== "none" && selectGv.value && selectGv.value !== "") {
             if (typeof hienThongb === 'function') {
@@ -298,8 +298,8 @@ function mokBcao() {
     mbcMo = true; 
     const nt = document.getElementById('nutNopBcao'); 
     if(nt && nt.style.display !== 'none') { 
-        // Chỉ kích hoạt nút nếu không có cột Q hoặc chưa chọn giáo viên
-        if (!cotQTonTai) {
+        // Chỉ kích hoạt nút nếu không có cột E hoặc chưa chọn giáo viên
+        if (!cotETonTai) {
             nt.disabled = false;
         } else {
             var selectGv = document.getElementById("hopChonGv");
@@ -346,7 +346,7 @@ function xoaDongNv(nt) {
     else { if (confirm(cbm)) { $(nt).closest('tr').remove(); dlStt(); tinhtTdong(); if(typeof mokBcao === 'function') mokBcao(); } }
 }
 
-function dlStt() { $('#bangNviec tbody tr.dongNv').each(function(chs) { $(this).find('.oStt').text(chs + 1); }); if ($('#bangNviec tbody tr.dongNv').length === 0) { $('#bangNviec tbody').html('<tr><td colspan=\"7\" class=\"text-center text-muted py-3 small\">Chưa có nhiệm vụ.2%2%</td></tr>'); } }
+function dlStt() { $('#bangNviec tbody tr.dongNv').each(function(chs) { $(this).find('.oStt').text(chs + 1); }); if ($('#bangNviec tbody tr.dongNv').length === 0) { $('#bangNviec tbody').html('</table><td colspan=\"7\" class=\"text-center text-muted py-3 small\">Chưa có nhiệm vụ.2%2%</td></tr>'); } }
 
 function tinhtTdong() {
     const dtc = document.getElementById('nhapDiemThuong'); let dc = dtc ? (parseFloat(dtc.value) || 0) : 0;
@@ -381,11 +381,11 @@ function capnhTdong() { tinhtTdong(); }
 
 // Khởi tạo kiểm tra dropdown khi trang load
 $(document).ready(function() {
-    // Giả sử cột Q có giá trị "xx" và danh sách giáo viên
-    // Cần gọi hàm xuLyCotQ() khi có dữ liệu từ server
+    // Giả sử cột E có giá trị "xx" và danh sách giáo viên
+    // Cần gọi hàm xuLyCotE() khi có dữ liệu từ server
     // Ví dụ:
-    // if (giaTriCotQ === "xx") {
-    //     xuLyCotQ("xx", danhSachGiaoVien);
+    // if (giaTriCotE === "xx") {
+    //     xuLyCotE("xx", danhSachGiaoVien);
     // }
 });
 </script>
