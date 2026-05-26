@@ -153,9 +153,9 @@
     </div>
     <div class="thong-bao-nho">
         <i class="bi bi-info-circle"></i> Ghi chú: 
-        <strong>ID sheet</strong> không được trùng nhau (không phân biệt hoa/thường).<br>
+        <strong>ID</strong> không được trùng nhau (không phân biệt hoa/thường).<br>
         Quyền <strong>x</strong> = Người giao việc, <strong>xx</strong> = Quản trị (có ô chọn GV), <strong>xxx</strong> = Quản trị cao cấp (có tab Cấp quyền).<br>
-        <strong class="text-danger">Khi xóa một dòng, sheet riêng của người đó (nếu có) cũng sẽ bị xóa vĩnh viễn!</strong>
+        <strong class="text-danger">Khi xóa, dữ liệu riêng của người đó (nếu có) cũng sẽ bị xóa vĩnh viễn!</strong>
     </div>
 </div>
 
@@ -300,10 +300,10 @@
                     return async function() {
                         var idSheet = currentList[idx].idSheet;
                         if (!idSheet) {
-                            alert('Không thể xóa: ID sheet trống.');
+                            alert('Không thể xóa: ID trống.');
                             return;
                         }
-                        if (confirm('Bạn có chắc muốn xóa cán bộ "' + idSheet + '"?\n⚠️ Sheet riêng của người này (nếu có) sẽ bị xóa vĩnh viễn!')) {
+                        if (confirm('Bạn có chắc muốn xóa cán bộ "' + idSheet + '"?\n⚠️ Dữ liệu riêng của người này (nếu có) sẽ bị xóa vĩnh viễn!')) {
                             btnXoa.innerHTML = '<i class="bi bi-hourglass-split"></i>';
                             btnXoa.disabled = true;
                             try {
@@ -311,7 +311,7 @@
                                 currentList.splice(idx, 1);
                                 renderTable();
                                 await capNhatDanhSach(currentList);
-                                alert('✅ Đã xóa cán bộ và sheet riêng thành công.');
+                                alert('✅ Đã xóa cán bộ và dữ liệu riêng thành công.');
                             } catch (err) {
                                 alert('❌ Lỗi khi xóa: ' + err.message + '\nVui lòng thử lại hoặc liên hệ quản trị.');
                                 btnXoa.innerHTML = '<i class="bi bi-trash3"></i>';
@@ -387,7 +387,7 @@
                     var lowerNew = newVal.toLowerCase();
                     var duplicate = currentList.some(function(item, i) { return i !== idx && item.idSheet.toLowerCase() === lowerNew; });
                     if (duplicate) {
-                        showTempError(this, 'ID sheet đã tồn tại!');
+                        showTempError(this, 'ID đã tồn tại!');
                         this.value = currentList[idx].idSheet;
                         return;
                     }
@@ -399,7 +399,7 @@
                     var lowerNew = newVal.toLowerCase();
                     var duplicate = currentList.some(function(item, i) { return i !== idx && item.idSheet.toLowerCase() === lowerNew; });
                     if (duplicate) {
-                        showTempError(this, 'ID sheet không được trùng!');
+                        showTempError(this, 'ID không được trùng!');
                         this.value = currentList[idx].idSheet;
                     } else {
                         currentList[idx].idSheet = newVal;
@@ -440,12 +440,12 @@
             for (var i = 0; i < currentList.length; i++) {
                 var id = currentList[i].idSheet.trim();
                 if (id === '') {
-                    alert('Dòng thứ ' + (i+1) + ' chưa nhập ID sheet.');
+                    alert('Dòng thứ ' + (i+1) + ' chưa nhập ID.');
                     return false;
                 }
                 var lower = id.toLowerCase();
                 if (map.has(lower)) {
-                    alert('ID sheet "' + id + '" bị trùng (dòng ' + (map.get(lower)+1) + ' và ' + (i+1) + ').');
+                    alert('ID "' + id + '" bị trùng (dòng ' + (map.get(lower)+1) + ' và ' + (i+1) + ').');
                     return false;
                 }
                 map.set(lower, i);
