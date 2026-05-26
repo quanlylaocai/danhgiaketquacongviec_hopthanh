@@ -120,6 +120,20 @@
     .text-mono {
         font-family: monospace;
     }
+    .error-box {
+        background: #f8d7da;
+        color: #721c24;
+        padding: 10px;
+        border-radius: 5px;
+        margin-bottom: 10px;
+        border-left: 4px solid #dc3545;
+    }
+    .reload-btn {
+        margin-left: 10px;
+        background: #6c757d;
+        border: none;
+        color: white;
+    }
 </style>
 
 <div class="khung-phanquyen">
@@ -134,8 +148,10 @@
         <div>
             <button class="btn btn-success btn-chucnang" id="btnThemMoiPQ"><i class="bi bi-plus-circle"></i> Thêm mới</button>
             <button class="btn btn-primary btn-chucnang" id="btnCapNhatPQ"><i class="bi bi-save"></i> Cập nhật</button>
+            <button class="btn btn-secondary btn-chucnang reload-btn" id="btnTaiLaiPQ"><i class="bi bi-arrow-repeat"></i> Tải lại</button>
         </div>
     </div>
+    <div id="thongBaoLoi" style="display: none;" class="error-box"></div>
     <div style="overflow-x: auto;">
         <table class="bang-phanquyen" id="quyenTablePQ">
             <thead>
@@ -163,36 +179,75 @@
 
 <script>
     (function() {
-        // Lấy API URL từ window cha hoặc window hiện tại
+        // Biến toàn cục API
         var API_URL = null;
         var getToken = function() { return ''; };
+        var isFetchError = false;
+        
+        // Hàm hiển thị lỗi trên giao diện
+        function showError(message) {
+            var errorDiv = document.getElementById('thongBaoLoi');
+            if (errorDiv) {
+                errorDiv.innerHTML = '<i class="bi bi-exclamation-triangle-fill"></i> ' + message;
+                errorDiv.style.display = 'block';
+                setTimeout(function() {
+                    if (errorDiv) errorDiv.style.display = 'none';
+                }, 8000);
+            } else {
+                alert(message);
+            }
+        }
+        
+        // Khởi tạo API URL từ nhiều nguồn
         try {
             if (window.parent && window.parent.ddungApi) {
                 API_URL = window.parent.ddungApi;
                 getToken = function() { return window.parent.PGV_TOKEN || ''; };
+            } else if (typeof ddungApi !== 'undefined') {
+                API_URL = ddungApi;
+                getToken = function() { return (typeof PGV_TOKEN !== 'undefined') ? PGV_TOKEN : ''; };
+            } else if (window.ddungApi) {
+                API_URL = window.ddungApi;
+                getToken = function() { return window.PGV_TOKEN || ''; };
             }
-        } catch(e) {}
-        if (!API_URL && typeof ddungApi !== 'undefined') {
-            API_URL = ddungApi;
-            getToken = function() { return (typeof PGV_TOKEN !== 'undefined') ? PGV_TOKEN : ''; };
+        } catch(e) {
+            console.warn('Lỗi đọc cấu hình API:', e);
         }
         
-        // Hàm gọi API đã sửa lỗi post
+        // Nếu không có API_URL, thử hỏi người dùng nhập? Hoặc dùng mặc định từ localStorage?
+        if (!API_URL) {
+            var savedApi = localStorage.getItem('custom_api_url');
+            if (savedApi && savedApi.trim() !== '') {
+                API_URL = savedApi;
+                showError('Sử dụng API URL từ bộ nhớ: ' + API_URL);
+            } else {
+                showError('Không tìm thấy API_URL. Vui lòng cấu hình ddungApi trong window cha hoặc nhập URL (F12 -> localStorage.setItem("custom_api_url", "https://...")');
+            }
+        }
+        
+        // Hàm gọi API với timeout và CORS
         function callApi(action, data, onSuccess, onError) {
             if (!API_URL) {
-                if (onError) onError(new Error("Không tìm thấy API"));
+                if (onError) onError(new Error("Không có API_URL"));
                 return;
             }
             var payload = { hdong: action, token: getToken() };
             for (var k in data) payload[k] = data[k];
             
+            var controller = new AbortController();
+            var timeoutId = setTimeout(function() { controller.abort(); }, 15000); // 15s timeout
+            
             fetch(API_URL, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },  // sửa thành JSON
-                body: JSON.stringify(payload)
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+                signal: controller.signal,
+                mode: 'cors',
+                credentials: 'omit'
             })
             .then(function(res) { 
-                if (!res.ok) throw new Error('HTTP ' + res.status);
+                clearTimeout(timeoutId);
+                if (!res.ok) throw new Error('HTTP ' + res.status + ': ' + res.statusText);
                 return res.text();
             })
             .then(function(txt) {
@@ -206,12 +261,17 @@
                 onSuccess(json);
             })
             .catch(function(err) { 
-                if (onError) onError(err); 
-                else console.error(err);
+                clearTimeout(timeoutId);
+                if (err.name === 'AbortError') {
+                    err = new Error('Quá thời gian chờ (15s), kiểm tra kết nối hoặc API.');
+                } else if (err.message === 'Failed to fetch') {
+                    err = new Error('Không thể kết nối tới API. Kiểm tra CORS, URL hoặc mạng. URL: ' + API_URL);
+                }
+                if (onError) onError(err);
             });
         }
         
-        // Các action đã được sửa: bỏ dấu cách
+        // Các action
         function layDanhSach() {
             return new Promise(function(resolve, reject) {
                 callApi('laydlkhaibao', {}, function(res) {
@@ -248,7 +308,6 @@
             });
         }
         
-        // Đồng bộ năm học với ô C7 sheet GIAOVIEC
         function layNamHocTuGIAOVIEC() {
             return new Promise(function(resolve, reject) {
                 callApi('laygiaovieccell', { sheet: 'GIAOVIEC', cell: 'C7' }, function(res) {
@@ -289,7 +348,7 @@
             if (!tbody) return;
             tbody.innerHTML = '';
             if (currentList.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" class="text-center">Chưa có dữ liệu. Nhấn "Thêm mới" để tạo.2%</tr></tr>';
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center">Chưa có dữ liệu. Nhấn "Thêm mới" để tạo.2%</td></tr>';
                 return;
             }
             for (var i = 0; i < currentList.length; i++) {
@@ -321,7 +380,7 @@
                                 await capNhatDanhSach(currentList);
                                 alert('✅ Đã xóa cán bộ và sheet riêng thành công.');
                             } catch (err) {
-                                alert('❌ Lỗi khi xóa: ' + err.message + '\nVui lòng thử lại hoặc liên hệ quản trị.');
+                                alert('❌ Lỗi khi xóa: ' + err.message);
                                 btnXoa.innerHTML = '<i class="bi bi-trash3"></i>';
                                 btnXoa.disabled = false;
                             }
@@ -470,7 +529,6 @@
             btn.disabled = true;
             try {
                 await capNhatDanhSach(currentList);
-                
                 var namHocInput = $('#namHocInput');
                 if (namHocInput) {
                     var namHocValue = namHocInput.value.trim();
@@ -478,10 +536,10 @@
                         await capNhatNamHocVaoGIAOVIEC(namHocValue);
                     }
                 }
-                alert('✅ Thành công\nĐã cập nhật dữ liệu quyền và năm học (ô C7 sheet GIAOVIEC).');
+                alert('✅ Thành công\nĐã cập nhật dữ liệu quyền và năm học.');
                 await taiLaiDuLieu();
             } catch (err) {
-                alert('❌ Lỗi lưu: ' + err.message);
+                showError('Lưu thất bại: ' + err.message);
             } finally {
                 btn.innerHTML = originalHtml;
                 btn.disabled = false;
@@ -489,13 +547,18 @@
         }
         
         async function taiLaiDuLieu() {
+            var tbody = $('#quyenTableBodyPQ');
+            if (tbody) tbody.innerHTML = '<tr><td colspan="6" class="text-center">Đang tải...<div class="spinner-border spinner-sm ms-2"></div>2%</td></tr>';
             try {
                 var list = await layDanhSach();
                 currentList = list;
                 renderTable();
+                // Ẩn thông báo lỗi nếu thành công
+                var errDiv = document.getElementById('thongBaoLoi');
+                if (errDiv) errDiv.style.display = 'none';
             } catch (err) {
                 console.error(err);
-                alert('Lỗi tải dữ liệu: ' + err.message);
+                showError('Tải dữ liệu thất bại: ' + err.message);
                 currentList = [];
                 renderTable();
             }
@@ -516,7 +579,7 @@
                     return;
                 }
             } catch (err) {
-                console.warn('Không thể đọc năm học từ GIAOVIEC, dùng fallback', err);
+                console.warn('Không thể đọc năm học từ GIAOVIEC', err);
             }
             var saved = localStorage.getItem('namHocQuyen');
             if (saved && saved.match(/^\d{4}-\d{4}$/)) {
@@ -534,8 +597,9 @@
             });
         }
         
+        // Khởi động
         if (!API_URL) {
-            $('#quyenTableBodyPQ').innerHTML = '<tr><td colspan="6" class="text-danger text-center">Không tìm thấy API. Vui lòng tải lại trang chính.2%</td></tr>';
+            $('#quyenTableBodyPQ').innerHTML = '<tr><td colspan="6" class="text-danger text-center">Không có API_URL. Vui lòng thiết lập ddungApi hoặc lưu custom_api_url.2%</td></tr>';
             return;
         }
         
@@ -544,7 +608,9 @@
         
         var btnThem = $('#btnThemMoiPQ');
         var btnCap = $('#btnCapNhatPQ');
+        var btnTai = $('#btnTaiLaiPQ');
         if (btnThem) btnThem.onclick = themDongMoi;
         if (btnCap) btnCap.onclick = luuDuLieu;
+        if (btnTai) btnTai.onclick = taiLaiDuLieu;
     })();
 </script>
