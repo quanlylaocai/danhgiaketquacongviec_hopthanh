@@ -165,6 +165,12 @@
             } 
             setTimeout(() => { 
                 document.querySelectorAll('#khuGvChinh textarea.form-control').forEach(ptu => gvCoDan(ptu)); 
+                // === THÊM TÍNH NĂNG KHÓA CỘT THỜI GIAN HT VÀ NGƯỜI THỰC HIỆN KHI LOAD DỮ LIỆU ===
+                const isReadonlyMode = (window.PGV_GIAO_VIEC_READONLY === true);
+                if (isReadonlyMode) {
+                    document.querySelectorAll('#gvBangNv input.oNgayGv').forEach(inp => inp.readOnly = true);
+                    document.querySelectorAll('#gvBangNv select.oNnghanGv').forEach(sel => sel.disabled = true);
+                }
             }, 300); 
         } else { 
             gvVeDong(); 
