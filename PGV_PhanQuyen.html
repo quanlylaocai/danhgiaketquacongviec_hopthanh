@@ -5,9 +5,6 @@
         padding: 15px;
         box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         font-family: 'Times New Roman', Times, serif;
-        height: calc(100vh - 40px);
-        display: flex;
-        flex-direction: column;
     }
     .tieu-de-phanquyen {
         font-size: 20px;
@@ -20,7 +17,37 @@
         justify-content: space-between;
         align-items: center;
         flex-wrap: wrap;
-        flex-shrink: 0;
+        gap: 10px;
+    }
+    .tieu-de-phanquyen .left-group {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        flex-wrap: wrap;
+    }
+    .tieu-de-phanquyen .namhoc-group {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 16px;
+        font-weight: normal;
+        background: #f1f3f5;
+        padding: 4px 10px;
+        border-radius: 20px;
+    }
+    .tieu-de-phanquyen .namhoc-group label {
+        margin: 0;
+        font-weight: 500;
+        color: #0b3b5f;
+    }
+    .tieu-de-phanquyen .namhoc-group input {
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+        padding: 4px 8px;
+        width: 110px;
+        font-size: 14px;
+        font-family: inherit;
+        text-align: center;
     }
     .btn-chucnang {
         font-size: 13px;
@@ -28,21 +55,10 @@
         border-radius: 4px;
         border: none;
     }
-    
-    /* VÙNG CUỘN CHO BẢNG */
-    .bang-wrapper {
-        flex: 1;
-        overflow: auto;
-        border: 1px solid #dee2e6;
-        border-radius: 4px;
-        min-height: 300px;
-    }
-    
     .bang-phanquyen {
         width: 100%;
         border-collapse: collapse;
         font-size: 14px;
-        min-width: 700px;
     }
     .bang-phanquyen th {
         background-color: #e9ecef;
@@ -50,10 +66,6 @@
         padding: 8px 6px;
         text-align: center;
         font-weight: bold;
-        position: sticky;
-        top: 0;
-        background-color: #e9ecef;
-        z-index: 10;
     }
     .bang-phanquyen td {
         border: 1px solid #dee2e6;
@@ -66,7 +78,10 @@
         padding: 4px 6px;
         border: 1px solid #ccc;
         border-radius: 4px;
-        box-sizing: border-box;
+    }
+    .id-sheet-input {
+        /* Đảm bảo hiển thị đúng dạng text, giữ số 0 đầu */
+        font-family: monospace;
     }
     .quyen-select {
         width: 110px;
@@ -97,48 +112,53 @@
         margin-top: 12px;
         padding-top: 8px;
         border-top: 1px dashed #dee2e6;
-        flex-shrink: 0;
     }
     .spinner-sm {
         width: 1rem;
         height: 1rem;
         border-width: 0.15em;
     }
+    .text-mono {
+        font-family: monospace;
+    }
 </style>
 
 <div class="khung-phanquyen">
     <div class="tieu-de-phanquyen">
-        <span><i class="bi bi-shield-lock"></i> CẤP QUYỀN TRUY CẬP</span>
+        <div class="left-group">
+            <span><i class="bi bi-shield-lock"></i> CẤP QUYỀN TRUY CẬP</span>
+            <div class="namhoc-group">
+                <label for="namHocInput"><i class="bi bi-calendar3"></i> Năm học:</label>
+                <input type="text" id="namHocInput" placeholder="YYYY-YYYY" maxlength="9" style="width: 110px;">
+            </div>
+        </div>
         <div>
             <button class="btn btn-success btn-chucnang" id="btnThemMoiPQ"><i class="bi bi-plus-circle"></i> Thêm mới</button>
             <button class="btn btn-primary btn-chucnang" id="btnCapNhatPQ"><i class="bi bi-save"></i> Cập nhật</button>
         </div>
     </div>
-    
-    <!-- Bọc bảng trong div có thanh cuộn -->
-    <div class="bang-wrapper">
+    <div style="overflow-x: auto;">
         <table class="bang-phanquyen" id="quyenTablePQ">
             <thead>
                 <tr>
-                    <th style="width: 50px">Xóa</th>
+                    <th style="width: 40px">Xóa</th>
                     <th style="width: 50px">STT</th>
-                    <th style="min-width: 140px">ID sheet</th>
-                    <th style="min-width: 200px">Hộp thư (Email)</th>
-                    <th style="min-width: 180px">Tên hiển thị</th>
+                    <th>ID sheet <span class="text-muted">(dạng text, giữ số 0 đầu)</span></th>
+                    <th>Hộp thư (Email)</th>
+                    <th>Tên hiển thị</th>
                     <th style="width: 130px">Quyền</th>
                 </tr>
             </thead>
             <tbody id="quyenTableBodyPQ">
-                <tr><td colspan="6" class="text-center">Đang tải...<div class="spinner-border spinner-sm ms-2"></div>2%2%</td></tr>
+                <tr><td colspan="6" class="text-center">Đang tải...<div class="spinner-border spinner-sm ms-2"></div>2%</td></tr>
             </tbody>
         </table>
     </div>
-    
     <div class="thong-bao-nho">
         <i class="bi bi-info-circle"></i> Ghi chú: 
-        <strong>ID cá nhân</strong> không được trùng nhau (không phân biệt hoa/thường).<br>
+        <strong>ID sheet</strong> được xử lý dưới dạng <strong class="text-mono">chuỗi văn bản</strong> (giữ nguyên số 0 ở đầu, không chuyển thành số). Không được trùng nhau (không phân biệt hoa/thường).<br>
         Quyền <strong>x</strong> = Người giao việc, <strong>xx</strong> = Quản trị (có ô chọn GV), <strong>xxx</strong> = Quản trị cao cấp (có tab Cấp quyền).<br>
-        <strong class="text-danger">Khi xóa một dòng, ID riêng của người đó (nếu có) cũng sẽ bị xóa vĩnh viễn!</strong>
+        <strong class="text-danger">Khi xóa một dòng, sheet riêng của người đó (nếu có) cũng sẽ bị xóa vĩnh viễn!</strong>
     </div>
 </div>
 
@@ -185,7 +205,8 @@
                     var raw = res.dliu || [];
                     var list = raw.map(function(row) {
                         return {
-                            idSheet: (row[0] || '').trim(),
+                            // Ép kiểu string để đảm bảo ID sheet dạng text, giữ số 0 đầu
+                            idSheet: (row[0] !== undefined && row[0] !== null) ? String(row[0]).trim() : '',
                             email: (row[1] || '').trim(),
                             tenHienThi: (row[2] || '').trim(),
                             quyen: (row[3] || '').trim()
@@ -199,7 +220,8 @@
         function capNhatDanhSach(list) {
             return new Promise(function(resolve, reject) {
                 var dataToSave = list.map(function(item) {
-                    return [item.idSheet, item.email, item.tenHienThi, item.quyen];
+                    // Đảm bảo ID sheet luôn được lưu dưới dạng chuỗi
+                    return [String(item.idSheet), item.email, item.tenHienThi, item.quyen];
                 });
                 callApi('capnhatkhai bao', { dliu: dataToSave }, function(res) { resolve(res); }, reject);
             });
@@ -208,27 +230,36 @@
         // Hàm xóa sheet riêng theo tên
         function xoaSheetCaNhan(tenSheet) {
             return new Promise(function(resolve, reject) {
-                if (!tenSheet || tenSheet.trim() === '') {
+                if (!tenSheet || String(tenSheet).trim() === '') {
                     resolve({ ttai: 'tcong', tbao: 'Tên sheet rỗng, bỏ qua' });
                     return;
                 }
-                callApi('xoasheetcanhan', { tenSheet: tenSheet }, resolve, reject);
+                callApi('xoasheetcanhan', { tenSheet: String(tenSheet) }, resolve, reject);
             });
         }
+        
+        // ========== ĐỒNG BỘ NĂM HỌC VỚI Ô C7 SHEET GIAOVIEC ==========
+        function layNamHocTuGIAOVIEC() {
+            return new Promise(function(resolve, reject) {
+                callApi('laygiaovieccell', { sheet: 'GIAOVIEC', cell: 'C7' }, function(res) {
+                    var value = (res.giatri || '').trim();
+                    resolve(value);
+                }, reject);
+            });
+        }
+        
+        function capNhatNamHocVaoGIAOVIEC(namHoc) {
+            return new Promise(function(resolve, reject) {
+                callApi('capnhatgiaovieccell', { sheet: 'GIAOVIEC', cell: 'C7', value: namHoc }, function(res) {
+                    resolve(res);
+                }, reject);
+            });
+        }
+        // =============================================================
         
         var currentList = [];
         var $ = function(sel) { return document.querySelector(sel); };
         var $$ = function(sel) { return document.querySelectorAll(sel); };
-        
-        function escapeHtml(str) {
-            if (!str) return '';
-            return str.replace(/[&<>]/g, function(m) {
-                if (m === '&') return '&amp;';
-                if (m === '<') return '&lt;';
-                if (m === '>') return '&gt;';
-                return m;
-            });
-        }
         
         function showTempError(input, message) {
             input.classList.add('input-error');
@@ -249,7 +280,7 @@
             if (!tbody) return;
             tbody.innerHTML = '';
             if (currentList.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" class="text-center">Chưa có dữ liệu. Nhấn "Thêm mới" để tạo.2%2%</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center">Chưa có dữ liệu. Nhấn "Thêm mới" để tạo.2%</table></tr>';
                 return;
             }
             for (var i = 0; i < currentList.length; i++) {
@@ -268,10 +299,10 @@
                     return async function() {
                         var idSheet = currentList[idx].idSheet;
                         if (!idSheet) {
-                            alert('Không thể xóa: ID trống.');
+                            alert('Không thể xóa: ID sheet trống.');
                             return;
                         }
-                        if (confirm('Bạn có chắc muốn xóa cán bộ "' + idSheet + '"?\n⚠️ ID riêng của người này (nếu có) sẽ bị xóa vĩnh viễn!')) {
+                        if (confirm('Bạn có chắc muốn xóa cán bộ "' + idSheet + '"?\n⚠️ Sheet riêng của người này (nếu có) sẽ bị xóa vĩnh viễn!')) {
                             btnXoa.innerHTML = '<i class="bi bi-hourglass-split"></i>';
                             btnXoa.disabled = true;
                             try {
@@ -279,7 +310,7 @@
                                 currentList.splice(idx, 1);
                                 renderTable();
                                 await capNhatDanhSach(currentList);
-                                alert('✅ Đã xóa cán bộ và ID riêng thành công.');
+                                alert('✅ Đã xóa cán bộ và sheet riêng thành công.');
                             } catch (err) {
                                 alert('❌ Lỗi khi xóa: ' + err.message + '\nVui lòng thử lại hoặc liên hệ quản trị.');
                                 btnXoa.innerHTML = '<i class="bi bi-trash3"></i>';
@@ -293,15 +324,18 @@
                 var tdStt = document.createElement('td');
                 tdStt.className = 'stt-cell';
                 tdStt.innerText = stt;
-                // ID sheet
+                // ID sheet - xử lý text, không ép số
                 var tdId = document.createElement('td');
                 var inpId = document.createElement('input');
                 inpId.type = 'text';
                 inpId.className = 'id-sheet-input';
+                // Hiển thị đúng chuỗi (kể cả "0123" vẫn giữ)
                 inpId.value = item.idSheet;
                 inpId.setAttribute('data-field', 'idSheet');
                 inpId.setAttribute('data-idx', i);
-                inpId.placeholder = 'VD: GV01';
+                inpId.placeholder = 'VD: 001, GV02, 0123';
+                inpId.autocomplete = 'off';
+                inpId.inputMode = 'text'; // khuyến khích nhập text
                 tdId.appendChild(inpId);
                 // Email
                 var tdEmail = document.createElement('td');
@@ -347,15 +381,18 @@
                 tbody.appendChild(tr);
             }
             
-            // Gắn sự kiện thay đổi
+            // Gắn sự kiện thay đổi: luôn xử lý dưới dạng chuỗi
             $$('.id-sheet-input').forEach(function(inp) {
                 inp.onchange = function(e) {
                     var idx = parseInt(this.getAttribute('data-idx'));
-                    var newVal = this.value.trim();
+                    // Lấy giá trị dạng text gốc, không trim ở đây (để giữ khoảng trắng đầu? nhưng nên trim)
+                    var newVal = this.value;
+                    // Ép thành string và trim (nhưng vẫn giữ số 0 đầu vì là string)
+                    newVal = String(newVal).trim();
                     var lowerNew = newVal.toLowerCase();
-                    var duplicate = currentList.some(function(item, i) { return i !== idx && item.idSheet.toLowerCase() === lowerNew; });
+                    var duplicate = currentList.some(function(item, i) { return i !== idx && String(item.idSheet).toLowerCase() === lowerNew; });
                     if (duplicate) {
-                        showTempError(this, 'ID đã tồn tại!');
+                        showTempError(this, 'ID sheet đã tồn tại!');
                         this.value = currentList[idx].idSheet;
                         return;
                     }
@@ -363,11 +400,11 @@
                 };
                 inp.onblur = function(e) {
                     var idx = parseInt(this.getAttribute('data-idx'));
-                    var newVal = this.value.trim();
+                    var newVal = String(this.value).trim();
                     var lowerNew = newVal.toLowerCase();
-                    var duplicate = currentList.some(function(item, i) { return i !== idx && item.idSheet.toLowerCase() === lowerNew; });
+                    var duplicate = currentList.some(function(item, i) { return i !== idx && String(item.idSheet).toLowerCase() === lowerNew; });
                     if (duplicate) {
-                        showTempError(this, 'ID không được trùng!');
+                        showTempError(this, 'ID sheet không được trùng!');
                         this.value = currentList[idx].idSheet;
                     } else {
                         currentList[idx].idSheet = newVal;
@@ -406,9 +443,9 @@
         function validateList() {
             var map = new Map();
             for (var i = 0; i < currentList.length; i++) {
-                var id = currentList[i].idSheet.trim();
+                var id = String(currentList[i].idSheet).trim();
                 if (id === '') {
-                    alert('Dòng thứ ' + (i+1) + ' chưa nhập ID.');
+                    alert('Dòng thứ ' + (i+1) + ' chưa nhập ID sheet.');
                     return false;
                 }
                 var lower = id.toLowerCase();
@@ -428,8 +465,19 @@
             btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Đang lưu...';
             btn.disabled = true;
             try {
+                // 1. Lưu danh sách quyền (ID sheet dạng text)
                 await capNhatDanhSach(currentList);
-                alert('✅ Thành công\nĐã cập nhật dữ liệu quyền vào hệ thống.');
+                
+                // 2. Đồng bộ năm học vào ô C7 sheet GIAOVIEC
+                var namHocInput = $('#namHocInput');
+                if (namHocInput) {
+                    var namHocValue = namHocInput.value.trim();
+                    if (namHocValue) {
+                        await capNhatNamHocVaoGIAOVIEC(namHocValue);
+                    }
+                }
+                
+                alert('✅ Thành công\nĐã cập nhật dữ liệu quyền (ID sheet dạng text) và năm học (ô C7 sheet GIAOVIEC).');
                 await taiLaiDuLieu();
             } catch (err) {
                 alert('❌ Lỗi lưu\n' + err.message);
@@ -452,12 +500,51 @@
             }
         }
         
+        // Khởi tạo năm học: ưu tiên đọc từ ô C7 sheet GIAOVIEC
+        async function khoiTaoNamHoc() {
+            var namHocInput = $('#namHocInput');
+            if (!namHocInput) return;
+            
+            var currentYear = new Date().getFullYear();
+            var currentMonth = new Date().getMonth() + 1;
+            var startYear = (currentMonth >= 7) ? currentYear : currentYear - 1;
+            var defaultNamHoc = startYear + '-' + (startYear + 1);
+            
+            try {
+                var giaTriTuSheet = await layNamHocTuGIAOVIEC();
+                if (giaTriTuSheet && giaTriTuSheet.match(/^\d{4}-\d{4}$/)) {
+                    namHocInput.value = giaTriTuSheet;
+                    localStorage.setItem('namHocQuyen', giaTriTuSheet);
+                    return;
+                }
+            } catch (err) {
+                console.warn('Không thể đọc năm học từ GIAOVIEC, dùng fallback', err);
+            }
+            
+            var saved = localStorage.getItem('namHocQuyen');
+            if (saved && saved.match(/^\d{4}-\d{4}$/)) {
+                namHocInput.value = saved;
+            } else {
+                namHocInput.value = defaultNamHoc;
+            }
+            
+            namHocInput.addEventListener('change', function() {
+                var val = this.value.trim();
+                if (val.match(/^\d{4}-\d{4}$/)) {
+                    localStorage.setItem('namHocQuyen', val);
+                } else {
+                    this.value = localStorage.getItem('namHocQuyen') || defaultNamHoc;
+                }
+            });
+        }
+        
         // Khởi tạo
         if (!API_URL) {
-            $('#quyenTableBodyPQ').innerHTML = '<tr><td colspan="6" class="text-danger text-center">Không tìm thấy API. Vui lòng tải lại trang chính.2%2%</td></tr>';
+            $('#quyenTableBodyPQ').innerHTML = '<tr><td colspan="6" class="text-danger text-center">Không tìm thấy API. Vui lòng tải lại trang chính.2%<tr></tr>';
             return;
         }
         
+        khoiTaoNamHoc();
         taiLaiDuLieu();
         
         var btnThem = $('#btnThemMoiPQ');
