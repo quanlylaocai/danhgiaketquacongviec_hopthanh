@@ -123,6 +123,35 @@ function xulyXoaTepDc(chs) {
     } else { anTaiDl(); hienThongb('loi', "Lỗi API"); }
 }
 
+// ===== HÀM KHÓA/MỞ KHÓA NÚT LƯU VÀ NỘP BÁO CÁO =====
+function khoaNutLuuVaNopBaoCao(khoa) {
+    const btnLuu = document.querySelector('button[onclick="xulyLuuTam()"]');
+    const btnNop = document.getElementById('nutNopBcao');
+    if (khoa) {
+        if (btnLuu) btnLuu.disabled = true;
+        if (btnNop) btnNop.disabled = true;
+    } else {
+        if (btnLuu) btnLuu.disabled = false;
+        if (btnNop) btnNop.disabled = false;
+    }
+}
+
+// ===== KIỂM TRA VÀ KHÓA NÚT KHI CHỌN GIÁO VIÊN KHÁC =====
+function kiemTraKhoaNutKhiChonGv() {
+    const hopChonGv = document.getElementById('hopChonGv');
+    if (!hopChonGv) return;
+    const selectedValue = hopChonGv.value;
+    // Nếu chọn giáo viên khác (selectedValue không rỗng và không phải là chính mình)
+    if (selectedValue && selectedValue !== canbHientai?.canb?.ttrg) {
+        khoaNutLuuVaNopBaoCao(true);
+    } else {
+        // Nếu là chính mình hoặc chưa chọn, mở khóa (chỉ khi đang xem chính mình)
+        if (window.PGV_IS_SELF === true) {
+            khoaNutLuuVaNopBaoCao(false);
+        }
+    }
+}
+
 function xulyLuuTam(ath = false, xltc = null) {
     // Chỉ được lưu nhật ký của người khác nếu quyền là 'xxx'
     if (!window.PGV_IS_SELF && window.PGV_QUYEN !== 'xxx') {
@@ -189,7 +218,7 @@ function khaBcao() { if (!mbcMo) { const nt = document.getElementById('nutNopBca
 
 function veBangNviec(db) {
     khaBcao(); const bg = $('#bangNviec tbody').empty();
-    if (!db || db.length === 0) { bg.append('<tr><td colspan="7" class="text-center text-muted py-3 small">Chưa có nhiệm vụ.2%</td></tr>'); tinhtTdong(); return; }
+    if (!db || db.length === 0) { bg.append('<tr><td colspan="7" class="text-center text-muted py-3 small">Chưa có nhiệm vụ.2%2%2%</td></tr>'); tinhtTdong(); return; }
     const showDeleteBtn = window.PGV_CAN_SHOW_DELETE_BUTTON === true;
     db.forEach((dong, chs) => {
         let sn = chs + 1; let ndc = dong[1] ? String(dong[1]) : ""; let hc = dong[2] || ""; let ltd = dong[3] || ""; let kqchon = dong[4] || ""; let nht = dong[5]; let ndd = hdNgay(nht); let nttc = hdNgay(hc);
@@ -217,7 +246,7 @@ function xoaDongNv(nt) {
     else { if (confirm(cbm)) { $(nt).closest('tr').remove(); dlStt(); tinhtTdong(); if(typeof mokBcao === 'function') mokBcao(); } }
 }
 
-function dlStt() { $('#bangNviec tbody tr.dongNv').each(function(chs) { $(this).find('.oStt').text(chs + 1); }); if ($('#bangNviec tbody tr.dongNv').length === 0) { $('#bangNviec tbody').html('<tr><td colspan=\"7\" class=\"text-center text-muted py-3 small\">Chưa có nhiệm vụ.2%2%</td></tr>'); } }
+function dlStt() { $('#bangNviec tbody tr.dongNv').each(function(chs) { $(this).find('.oStt').text(chs + 1); }); if ($('#bangNviec tbody tr.dongNv').length === 0) { $('#bangNviec tbody').html('<tr><td colspan=\"7\" class=\"text-center text-muted py-3 small\">Chưa có nhiệm vụ.</td></tr>'); } }
 
 function tinhtTdong() {
     const dtc = document.getElementById('nhapDiemThuong'); let dc = dtc ? (parseFloat(dtc.value) || 0) : 0;
@@ -249,4 +278,18 @@ function kNgay(h, f) { if (!f) return null; let df = chNgayVN(f); if (!df) retur
 function chNgayVN(c) { if (!c || typeof c !== 'string') return null; const sc = c.trim().replace(/[-.]/g, '/'); const pt = sc.split('/'); if (pt.length !== 3) return null; let n = parseInt(pt[0], 10), m = parseInt(pt[1], 10), y = parseInt(pt[2], 10); if (isNaN(n) || isNaN(m) || isNaN(y)) return null; return new Date(y, m - 1, n); }
 function hdNgay(nc) { if (!nc) return ""; let cs = String(nc).trim(); if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(cs)) return cs; if (cs.length >= 10 && cs.charAt(4) === '-') { let px = cs.substring(0, 10).split('-'); if(px.length === 3) return px[2] + '/' + px[1] + '/' + px[0]; } let cl = cs.replace(/\(.*?\)/g, '').trim(); let dt = new Date(cl); if (!isNaN(dt.getTime())) { let ng = dt.getDate(), th = dt.getMonth() + 1, na = dt.getFullYear(); return (ng < 10 ? '0' + ng : ng) + '/' + (th < 10 ? '0' + th : th) + '/' + na; } return nc; }
 function capnhTdong() { tinhtTdong(); }
+
+// ===== KHỞI TẠO SỰ KIỆN CHO Ô CHỌN GIÁO VIÊN =====
+$(document).ready(function() {
+    // Gắn sự kiện change cho ô chọn giáo viên
+    $('#hopChonGv').off('change').on('change', function() {
+        kiemTraKhoaNutKhiChonGv();
+    });
+});
+
+// Ghi đè hàm khiTaiDlXong gốc để thêm xử lý khóa nút (nếu cần)
+// Lưu ý: Hàm khiTaiDlXong đã tồn tại trong index.html, ta chỉ cần gọi kiemTraKhoaNutKhiChonGv() sau khi tải xong dữ liệu
+// Để đảm bảo, ta sẽ gọi thêm trong veBangNviec sau khi vẽ xong
+// Thêm dòng cuối cùng trong veBangNviec:
+// setTimeout(() => { kiemTraKhoaNutKhiChonGv(); }, 50);
 </script>
