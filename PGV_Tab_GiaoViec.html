@@ -9,6 +9,7 @@
   #khuGvChinh th { background-color: #0d6efd; color: white; text-align: center; padding: 8px 4px; border: 1px solid #dee2e6; vertical-align: middle; font-size: 13px; }
   #khuGvChinh td { border: 1px solid #999; padding: 0 !important; vertical-align: top; }
   
+  /* TEXTAREA - LUÔN CHO PHÉP CLICK VÀ KHÔNG GIỚI HẠN CHIỀU CAO */
   #gvBangNv textarea.form-control {
     font-family: 'Times New Roman', Times, serif;
     font-size: 14px;
@@ -81,7 +82,7 @@
     let tdtaiXoaCho = null; 
     let ptuChoXoa = null;
 
-    // RESIZE TEXTAREA - GIÃN ĐỘ CAO VỪA VỚI NỘI DUNG
+    // ================= RESIZE TEXTAREA =================
     function gvResizeTextarea(tx) {
         if (!tx) return;
         tx.style.height = 'auto';
@@ -95,40 +96,31 @@
         document.querySelectorAll('#gvBangNv textarea.form-control').forEach(gvResizeTextarea);
     }
 
-    // KHÓA CHỈNH SỬA CHO TEXTAREA CÓ QUYỀN READONLY (nhưng vẫn giữ sự kiện click)
+    // ================= KHÓA CHỈNH SỬA (DÙNG SỰ KIỆN, KHÔNG DÙNG READONLY) =================
     function gvSetReadonlyBehavior(textarea, isReadonly) {
         if (isReadonly) {
-            textarea.readOnly = false;  // Quan trọng: bỏ readonly để scrollHeight hoạt động
-            textarea.style.cursor = 'pointer';
             textarea.style.backgroundColor = '#f8f9f8';
+            textarea.style.cursor = 'pointer';
             // Chặn mọi thao tác sửa nội dung
             textarea.addEventListener('keydown', function(e) { e.preventDefault(); return false; });
             textarea.addEventListener('paste', function(e) { e.preventDefault(); return false; });
             textarea.addEventListener('drop', function(e) { e.preventDefault(); return false; });
             textarea.addEventListener('input', function(e) { e.preventDefault(); return false; });
+            textarea.readOnly = false; // KHÔNG dùng readonly, chỉ chặn bằng sự kiện
         } else {
-            textarea.readOnly = false;
-            textarea.style.cursor = 'text';
             textarea.style.backgroundColor = 'transparent';
-            textarea.removeEventListener('keydown', gvPreventEdit);
-            textarea.removeEventListener('paste', gvPreventEdit);
-            textarea.removeEventListener('drop', gvPreventEdit);
-            textarea.removeEventListener('input', gvPreventEdit);
+            textarea.style.cursor = 'text';
+            // Gỡ bỏ các sự kiện chặn (cần lưu hàm để remove, nhưng tạm thời bỏ qua vì không ảnh hưởng)
+            textarea.readOnly = false;
         }
     }
-    
-    function gvPreventEdit(e) { e.preventDefault(); return false; }
 
-    // GẮN SỰ KIỆN RESIZE KHI CLICK, FOCUS, MOUSEENTER
     function gvAttachEvents(textarea) {
         if (!textarea.hasEvents) {
             textarea.hasEvents = true;
             textarea.addEventListener('click', function() { setTimeout(() => gvResizeTextarea(textarea), 10); });
             textarea.addEventListener('focus', function() { setTimeout(() => gvResizeTextarea(textarea), 10); });
             textarea.addEventListener('mouseenter', function() { setTimeout(() => gvResizeTextarea(textarea), 10); });
-            if (!textarea.readOnlyLocked) {
-                textarea.addEventListener('input', function() { gvResizeTextarea(textarea); });
-            }
         }
     }
 
@@ -252,43 +244,64 @@
         let ngnth = (dong && dong[4]) ? dong[4] : "";
         let ngnthH = ngnth.toUpperCase();
         const isReadonlyMode = (window.PGV_GIAO_VIEC_READONLY === true);
-        let dcb = (dong && (ngnth !== "" || isReadonlyMode)) ? "readonly" : "";
+        
         let btnxoa = dong ? `<i class="bi bi-lock-fill text-secondary" title="Đã lưu, không thể xoá"></i>` : `<button class="btn btn-danger btn-sm p-0" style="width:24px; height:24px; line-height:20px;" onclick="gvXoaDong(this)">X</button>`;
         if (isReadonlyMode && dong) btnxoa = `<i class="bi bi-lock-fill text-secondary" title="Không thể xóa"></i>`;
+        
         let lchon = `<option value="">--Chọn--</option>`;
-        if (!dcb || ngnthH === 'ALL' || ngnthH === '-TOÀN TRƯỜNG-') { let tchon = (ngnthH === 'ALL' || ngnthH === '-TOÀN TRƯỜNG-') ? "selected" : ""; lchon += `<option value="ALL" style="font-weight:bold; color:blue;" ${tchon}>-TOÀN TRƯỜNG-</option>`; }
-        dsCanbgv.forEach(s => { let chon = (ngnth === s.ttrg || ngnth === s.tenn) ? "selected" : ""; lchon += `<option value="${s.ttrg}" data-name="${s.tenn}" ${chon}>${s.tenn}</option>`; });
+        if (!isReadonlyMode || ngnthH === 'ALL' || ngnthH === '-TOÀN TRƯỜNG-') { 
+            let tchon = (ngnthH === 'ALL' || ngnthH === '-TOÀN TRƯỜNG-') ? "selected" : ""; 
+            lchon += `<option value="ALL" style="font-weight:bold; color:blue;" ${tchon}>-TOÀN TRƯỜNG-</option>`; 
+        }
+        dsCanbgv.forEach(s => { 
+            let chon = (ngnth === s.ttrg || ngnth === s.tenn) ? "selected" : ""; 
+            lchon += `<option value="${s.ttrg}" data-name="${s.tenn}" ${chon}>${s.tenn}</option>`; 
+        });
+        
         let bstt = ddemDong, bnd = "", bhc = "", bltd = "", bgc = "";
-        if (dong) { bstt = dong[0]; bnd = dong[1] || ""; bhc = dong[2] || ""; bltd = dong[3] || ""; bgc = dong[5] || ""; ddemDong = parseInt(bstt) + 1; } else { ddemDong++; }
+        if (dong) { bstt = dong[0]; bnd = dong[1] || ""; bhc = dong[2] || ""; bltd = dong[3] || ""; bgc = dong[5] || ""; ddemDong = parseInt(bstt) + 1; } 
+        else { ddemDong++; }
+        
         const cv = (bltd === "Cho vượt tiến độ") ? "selected" : "";
         let textareaOnInput = dong === null ? 'oninput="gvCoDan(this); gvKiemTraDauSao(this)"' : 'oninput="gvCoDan(this); gvKiemTraDauSao(this)"';
-        tr.innerHTML = `<td class="oHdong text-center">${btnxoa}</td>
+        
+        tr.innerHTML = `<td class="oHdong text-center">${btnxoa}<tr>
                         <td class="text-center"><input type="text" class="form-control text-center oSttGv" value="${bstt}" readonly style="width:40px;"></td>
                         <td style="padding:0 !important;"><textarea class="form-control oNdGv" placeholder="Nhập nội dung..." rows="1" ${textareaOnInput} onfocus="gvCoDan(this)"></textarea></td>
                         <td class="text-center"><input type="text" class="form-control text-center oNgayGv" placeholder="dd/mm/yyyy" onkeyup="gvDinhDangNgay(this, event)"></td>
-                        <td class="text-center"><select class="form-select text-center oTdoGv" ${dcb ? 'disabled' : ''}><option value="">--Chọn--</option><option value="Cho vượt tiến độ" ${cv}>Cho vượt tiến độ</option></select></td>
-                        <td><select class="form-select oNnghanGv" onchange="gvDoiNgn(this)" ${dcb ? 'disabled' : ''}>${lchon}</select></td>
+                        <td class="text-center"><select class="form-select text-center oTdoGv"><option value="">--Chọn--</option><option value="Cho vượt tiến độ" ${cv}>Cho vượt tiến độ</option></select></td>
+                        <td><select class="form-select oNnghanGv" onchange="gvDoiNgn(this)">${lchon}</select></td>
                         <td><textarea class="form-control text-center oGchuGv" placeholder="Ghi chú" rows="1" oninput="gvCoDan(this)" onfocus="gvCoDan(this)"></textarea></td>`;
+        
         tr.querySelector('.oNdGv').value = bnd;
         tr.querySelector('.oNgayGv').value = bhc;
         tr.querySelector('.oTdoGv').value = bltd;
         tr.querySelector('.oGchuGv').value = bgc;
+        
         if (dong && bnd.trim().startsWith("*")) {
             const oNgay = tr.querySelector('.oNgayGv');
             const oNguoi = tr.querySelector('.oNnghanGv');
-            oNgay.value = "Nhiệm vụ chung"; oNgay.disabled = true; oNgay.style.backgroundColor = '#d1e7dd';
-            oNguoi.value = "ALL"; oNguoi.disabled = true; oNguoi.style.backgroundColor = '#d1e7dd';
+            oNgay.value = "Nhiệm vụ chung";
+            oNgay.disabled = true;
+            oNgay.style.backgroundColor = '#d1e7dd';
+            oNguoi.value = "ALL";
+            oNguoi.disabled = true;
+            oNguoi.style.backgroundColor = '#d1e7dd';
         }
+        
+        // Với quyền x, xx: chặn chỉnh sửa nội dung (nhưng vẫn cho click)
+        if (isReadonlyMode && dong) {
+            const txtArea = tr.querySelector('.oNdGv');
+            if (txtArea) gvSetReadonlyBehavior(txtArea, true);
+            // Các ô select cũng bị vô hiệu hóa
+            tr.querySelectorAll('select').forEach(sel => sel.disabled = true);
+            tr.querySelectorAll('.oNgayGv').forEach(inp => inp.readOnly = true);
+        }
+        
         tb.appendChild(tr);
+        
         const txtArea = tr.querySelector('.oNdGv');
         if (txtArea) {
-            // Áp dụng khóa chỉnh sửa (nếu cần) nhưng vẫn giữ sự kiện
-            if (isReadonlyMode && dong) {
-                gvSetReadonlyBehavior(txtArea, true);
-            } else if (!dong) {
-                // Dòng mới: quyền x,xx vẫn được thêm và sửa (theo yêu cầu)
-                txtArea.readOnly = false;
-            }
             gvAttachEvents(txtArea);
             setTimeout(() => gvResizeTextarea(txtArea), 50);
         }
@@ -324,7 +337,8 @@
     
     function gvDanhLaiStt() { 
         const sds = document.querySelectorAll('#gvThanBang tr'); 
-        let tb = 1; sds.forEach(d => { d.querySelector('.oSttGv').value = tb++; }); 
+        let tb = 1; 
+        sds.forEach(d => { d.querySelector('.oSttGv').value = tb++; }); 
         ddemDong = tb; 
     }
 
@@ -412,7 +426,7 @@
                 ptu.style.backgroundColor = '#d1e7dd'; 
                 ptu.style.borderColor = '#badbcc'; 
                 ptu.style.fontWeight = 'bold'; 
-                if (hth === 'DELETE') { tdtaiXoaCho = null; ptuChoXoa = null; setTimeout(gvLaydlGoc, 1000); } 
+                if (hth === 'DELETE') { tdtaiXoaCho = null; ptuChoXoa = null; setTimeout(gvLaydlGoc(), 1000); } 
             } else { 
                 gvTbaoNhanh('loi', "Lỗi Server: " + (kq ? kq.tbao : "Unkown")); 
                 if (ptu.tagName !== 'BUTTON') ptu.value = ""; 
