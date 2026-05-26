@@ -42,7 +42,7 @@
 
     <div class="hopBang">
       <table id="gvBangNv">
-        <thead><tr><th style="width: 40px;">Xóa</th><th style="width: 40px;">TT</th><th style="width: 35%;">Nội dung công việc</th><th style="width: 120px;">Thời gian HT</th><th style="width: 15%;">Loại tiến độ</th><th style="width: 15%;">Người thực hiện</th><th style="width: 20%;">Ghi chú</th></tr></thead>
+        <thead>迭代<th style="width: 40px;">Xóa</th><th style="width: 40px;">TT</th><th style="width: 35%;">Nội dung công việc</th><th style="width: 120px;">Thời gian HT</th><th style="width: 15%;">Loại tiến độ</th><th style="width: 15%;">Người thực hiện</th><th style="width: 20%;">Ghi chú</th></tr></thead>
         <tbody id="gvThanBang"></tbody>
       </table>
       <button class="btn btn-success nutThem" onclick="gvThemDong()">+ Thêm dòng mới</button>
@@ -62,14 +62,6 @@
     let ddemDong = 1; 
     let tdtaiXoaCho = null; 
     let ptuChoXoa = null;
-
-    // ========== CẤU HÌNH ẨN NÚT "CẬP NHẬT NHIỆM VỤ CHUNG" ==========
-    // Cách 1: Gán trực tiếp biến này = true TRƯỚC KHI LOAD TRANG
-    // window.PGV_HIDE_CHUNG_BUTTON = true;   // Bỏ comment nếu muốn ẩn cứng
-    
-    // Cách 2: Gán giá trị cột E (từ server hoặc thủ công)
-    // window.PGV_COT_E = "x";    // hoặc "xx"
-    // =================================================================
 
     setTimeout(function() { 
         gvTaiCanb(); 
@@ -183,41 +175,40 @@
             gvVeDong(); 
         }
 
-        // ===================== THUẬT TOÁN ẨN NÚT MỚI =====================
+        // ========== THUẬT TOÁN ĐIỀU KHIỂN NÚT THEO CỘT E ==========
+        // Lấy giá trị cột E (ưu tiên từ dl.cotE, nếu không thì từ biến toàn cục)
+        let cotE = (dl && dl.cotE) ? dl.cotE : (window.PGV_COT_E || '');
         const btnChung = document.getElementById('btnCapNhatChung');
-        let shouldHide = false;
-        let reason = "";
+        const btnChuyenThang = document.getElementById('gvNutChth');
 
-        // 1. Kiểm tra biến ghi đè cứng (cao nhất)
-        if (window.PGV_HIDE_CHUNG_BUTTON === true) {
-            shouldHide = true;
-            reason = "PGV_HIDE_CHUNG_BUTTON = true";
-        } 
-        // 2. Kiểm tra cột E từ dữ liệu server trả về
-        else if (dl.cotE === 'x' || dl.cotE === 'xx') {
-            shouldHide = true;
-            reason = `dl.cotE = ${dl.cotE}`;
-        }
-        // 3. Kiểm tra biến toàn cục PGV_COT_E (có thể set từ ngoài)
-        else if (window.PGV_COT_E === 'x' || window.PGV_COT_E === 'xx') {
-            shouldHide = true;
-            reason = `window.PGV_COT_E = ${window.PGV_COT_E}`;
-        }
+        // Kiểm tra quyền admin (để hiển thị nút trong trường hợp bình thường)
+        const isAdmin = (typeof canbHientai !== 'undefined' && canbHientai.qchon === true);
 
-        // Ghi log ra console để dễ debug
-        console.log("[GiaoViec] Kiểm tra ẩn nút:", { shouldHide, reason, dl_cotE: dl.cotE, window_PGV_COT_E: window.PGV_COT_E });
-
-        if (shouldHide) {
+        if (cotE === 'x') {
+            // Cột E = "x" : Ẩn cả hai nút
             if (btnChung) btnChung.style.display = 'none';
-        } else {
-            // Hiển thị theo quyền cũ (chỉ hiện nếu là admin)
-            if (typeof canbHientai !== 'undefined' && canbHientai.qchon === true) {
-                if (btnChung) btnChung.style.display = 'inline-block';
-            } else {
-                if (btnChung) btnChung.style.display = 'none';
+            if (btnChuyenThang) btnChuyenThang.style.display = 'none';
+        } 
+        else if (cotE === 'xx') {
+            // Cột E = "xx" : Ẩn nút cập nhật chung, HIỂN nút chuyển tháng
+            if (btnChung) btnChung.style.display = 'none';
+            if (btnChuyenThang) btnChuyenThang.style.display = 'flex';   // hiển thị theo style gốc
+        }
+        else {
+            // Không có cột E hoặc giá trị khác: hiển thị theo quyền admin
+            if (btnChung) {
+                btnChung.style.display = isAdmin ? 'inline-block' : 'none';
+            }
+            if (btnChuyenThang) {
+                btnChuyenThang.style.display = isAdmin ? 'flex' : 'none';
             }
         }
-        // ================================================================
+
+        // Ghi log ra console để dễ kiểm tra
+        console.log("[GiaoViec] cotE =", cotE, "| isAdmin =", isAdmin, 
+                    "| btnChung display =", btnChung ? btnChung.style.display : 'null',
+                    "| btnChuyenThang display =", btnChuyenThang ? btnChuyenThang.style.display : 'null');
+        // ============================================================
     }
 
     function gvVeDong(dong = null) {
