@@ -42,7 +42,7 @@
 
     <div class="hopBang">
       <table id="gvBangNv">
-        <thead><th style="width: 40px;">Xóa</th><th style="width: 40px;">TT</th><th style="width: 35%;">Nội dung công việc</th><th style="width: 120px;">Thời gian HT</th><th style="width: 15%;">Loại tiến độ</th><th style="width: 15%;">Người thực hiện</th><th style="width: 20%;">Ghi chú</th></tr></thead>
+        <thead><tr><th style="width: 40px;">Xóa</th><th style="width: 40px;">TT</th><th style="width: 35%;">Nội dung công việc</th><th style="width: 120px;">Thời gian HT</th><th style="width: 15%;">Loại tiến độ</th><th style="width: 15%;">Người thực hiện</th><th style="width: 20%;">Ghi chú</th></tr></thead>
         <tbody id="gvThanBang"></tbody>
       </table>
       <button class="btn btn-success nutThem" onclick="gvThemDong()">+ Thêm dòng mới</button>
@@ -175,39 +175,46 @@
             gvVeDong(); 
         }
 
-        // ========== THUẬT TOÁN ĐIỀU KHIỂN NÚT THEO CỘT E ==========
-        // Lấy giá trị cột E (ưu tiên từ dl.cotE, nếu không thì từ biến toàn cục)
+        // ========== THUẬT TOÁN ĐIỀU KHIỂN NÚT THEO CỘT E (sửa lỗi 'xx' chưa ẩn) ==========
         let cotE = (dl && dl.cotE) ? dl.cotE : (window.PGV_COT_E || '');
+        // Chuẩn hóa: loại bỏ khoảng trắng, viết thường
+        cotE = String(cotE).trim().toLowerCase();
+        
         const btnChung = document.getElementById('btnCapNhatChung');
         const btnChuyenThang = document.getElementById('gvNutChth');
-
-        // Kiểm tra quyền admin (để hiển thị nút trong trường hợp bình thường)
         const isAdmin = (typeof canbHientai !== 'undefined' && canbHientai.qchon === true);
 
+        console.log("[GiaoViec] cotE =", cotE, "| isAdmin =", isAdmin);
+
         if (cotE === 'x') {
-            // Cột E = "x" : Ẩn cả hai nút
+            // Ẩn cả hai nút
             if (btnChung) btnChung.style.display = 'none';
             if (btnChuyenThang) btnChuyenThang.style.display = 'none';
         } 
-        else if (cotE === "xx") {
-            // Cột E = "xx" : Ẩn nút cập nhật chung, HIỂN nút chuyển tháng
-            if (btnChung) btnChung.style.display = 'none';
-            if (btnChuyenThang) btnChuyenThang.style.display = 'flex';   // hiển thị theo style gốc
+        else if (cotE === 'xx') {
+            // Ẩn nút cập nhật chung, hiện nút chuyển tháng
+            if (btnChung) {
+                btnChung.style.display = 'none';
+                // Đảm bảo chắc chắn ẩn bằng cách set inline style
+                btnChung.setAttribute('style', 'display: none !important;');
+            }
+            if (btnChuyenThang) {
+                btnChuyenThang.style.display = 'flex';
+                btnChuyenThang.removeAttribute('style'); // xóa any previous inline
+                btnChuyenThang.style.display = 'flex';
+            }
         }
         else {
-            // Không có cột E hoặc giá trị khác: hiển thị theo quyền admin
+            // Mặc định: hiển thị theo quyền admin
             if (btnChung) {
                 btnChung.style.display = isAdmin ? 'inline-block' : 'none';
+                if (isAdmin) btnChung.removeAttribute('style');
             }
             if (btnChuyenThang) {
                 btnChuyenThang.style.display = isAdmin ? 'flex' : 'none';
+                if (isAdmin) btnChuyenThang.removeAttribute('style');
             }
         }
-
-        // Ghi log ra console để dễ kiểm tra
-        console.log("[GiaoViec] cotE =", cotE, "| isAdmin =", isAdmin, 
-                    "| btnChung display =", btnChung ? btnChung.style.display : 'null',
-                    "| btnChuyenThang display =", btnChuyenThang ? btnChuyenThang.style.display : 'null');
         // ============================================================
     }
 
