@@ -83,6 +83,21 @@
         height: 1rem;
         border-width: 0.15em;
     }
+    /* === THÊM THANH CUỘN DỌC CHO BẢNG === */
+    .bang-wrapper {
+        max-height: 450px;      /* Giới hạn chiều cao khung hiển thị */
+        overflow-y: auto;       /* Thanh cuộn dọc */
+        overflow-x: auto;       /* Giữ thanh cuộn ngang nếu cần */
+        border: 1px solid #dee2e6;
+        border-radius: 4px;
+    }
+    /* Giữ header bảng cố định khi cuộn (tùy chọn, giúp dễ theo dõi) */
+    .bang-phanquyen thead th {
+        position: sticky;
+        top: 0;
+        background-color: #e9ecef;
+        z-index: 10;
+    }
 </style>
 
 <div class="khung-phanquyen">
@@ -93,7 +108,8 @@
             <button class="btn btn-primary btn-chucnang" id="btnCapNhatPQ"><i class="bi bi-save"></i> Cập nhật</button>
         </div>
     </div>
-    <div style="overflow-x: auto;">
+    <!-- Bọc bảng trong div có thanh cuộn dọc -->
+    <div class="bang-wrapper">
         <table class="bang-phanquyen" id="quyenTablePQ">
             <thead>
                 <tr>
@@ -106,7 +122,7 @@
                 </tr>
             </thead>
             <tbody id="quyenTableBodyPQ">
-                <tr><td colspan="6" class="text-center">Đang tải...<div class="spinner-border spinner-sm ms-2"></div>2%</td></tr>
+                <tr><td colspan="6" class="text-center">Đang tải...<div class="spinner-border spinner-sm ms-2"></div>2%</table></tr>
             </tbody>
         </table>
     </div>
