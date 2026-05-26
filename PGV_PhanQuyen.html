@@ -17,6 +17,28 @@
         justify-content: space-between;
         align-items: center;
         flex-wrap: wrap;
+        gap: 10px;
+    }
+    .nhom-namhoc {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+        font-weight: normal;
+        background: #f8f9fa;
+        padding: 4px 12px;
+        border-radius: 20px;
+    }
+    .nhom-namhoc label {
+        margin: 0;
+        color: #1e3c72;
+    }
+    .nhom-namhoc input {
+        width: 110px;
+        padding: 4px 8px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        font-size: 14px;
     }
     .btn-chucnang {
         font-size: 13px;
@@ -85,13 +107,12 @@
     }
     /* === THÊM THANH CUỘN DỌC CHO BẢNG === */
     .bang-wrapper {
-        max-height: 600px;      /* Giới hạn chiều cao khung hiển thị */
-        overflow-y: auto;       /* Thanh cuộn dọc */
-        overflow-x: auto;       /* Giữ thanh cuộn ngang nếu cần */
+        max-height: 600px;
+        overflow-y: auto;
+        overflow-x: auto;
         border: 1px solid #dee2e6;
         border-radius: 4px;
     }
-    /* Giữ header bảng cố định khi cuộn (tùy chọn, giúp dễ theo dõi) */
     .bang-phanquyen thead th {
         position: sticky;
         top: 0;
@@ -103,12 +124,17 @@
 <div class="khung-phanquyen">
     <div class="tieu-de-phanquyen">
         <span><i class="bi bi-shield-lock"></i> CẤP QUYỀN TRUY CẬP</span>
-        <div>
-            <button class="btn btn-success btn-chucnang" id="btnThemMoiPQ"><i class="bi bi-plus-circle"></i> Thêm mới</button>
-            <button class="btn btn-primary btn-chucnang" id="btnCapNhatPQ"><i class="bi bi-save"></i> Cập nhật</button>
+        <div style="display: flex; align-items: center; gap: 15px;">
+            <div class="nhom-namhoc">
+                <label><i class="bi bi-calendar"></i> Năm học:</label>
+                <input type="text" id="namHocInput" placeholder="VD: 2024-2025" style="width: 120px;">
+            </div>
+            <div>
+                <button class="btn btn-success btn-chucnang" id="btnThemMoiPQ"><i class="bi bi-plus-circle"></i> Thêm mới</button>
+                <button class="btn btn-primary btn-chucnang" id="btnCapNhatPQ"><i class="bi bi-save"></i> Cập nhật</button>
+            </div>
         </div>
     </div>
-    <!-- Bọc bảng trong div có thanh cuộn dọc -->
     <div class="bang-wrapper">
         <table class="bang-phanquyen" id="quyenTablePQ">
             <thead>
@@ -122,7 +148,7 @@
                 </tr>
             </thead>
             <tbody id="quyenTableBodyPQ">
-                <tr><td colspan="6" class="text-center">Đang tải...<div class="spinner-border spinner-sm ms-2"></div>2%</tr></tr>
+                <tr><td colspan="6" class="text-center">Đang tải...<div class="spinner-border spinner-sm ms-2"></div>2%</td></tr>
             </tbody>
         </table>
     </div>
@@ -177,7 +203,6 @@
                     var raw = res.dliu || [];
                     var list = raw.map(function(row) {
                         return {
-                            // Đảm bảo ID sheet là text (ép kiểu String)
                             idSheet: String(row[0] !== undefined && row[0] !== null ? row[0] : '').trim(),
                             email: (row[1] || '').trim(),
                             tenHienThi: (row[2] || '').trim(),
@@ -192,7 +217,6 @@
         function capNhatDanhSach(list) {
             return new Promise(function(resolve, reject) {
                 var dataToSave = list.map(function(item) {
-                    // Đảm bảo ID sheet được lưu dưới dạng text (ép kiểu String)
                     return [String(item.idSheet), item.email, item.tenHienThi, item.quyen];
                 });
                 callApi('capnhatkhai bao', { dliu: dataToSave }, function(res) { resolve(res); }, reject);
@@ -210,19 +234,35 @@
             });
         }
         
-        var currentList = [];
-        var $ = function(sel) { return document.querySelector(sel); };
-        var $$ = function(sel) { return document.querySelectorAll(sel); };
-        
-        function escapeHtml(str) {
-            if (!str) return '';
-            return str.replace(/[&<>]/g, function(m) {
-                if (m === '&') return '&amp;';
-                if (m === '<') return '&lt;';
-                if (m === '>') return '&gt;';
-                return m;
+        // === BỔ SUNG: LẤY NĂM HỌC HIỆN TẠI TỪ GIAOVIEC ===
+        function layNamHoc() {
+            return new Promise(function(resolve, reject) {
+                callApi('gvlaydlbdau', {}, function(res) {
+                    var nam = (res.dliu && res.dliu.nam) ? res.dliu.nam : '';
+                    var thang = (res.dliu && res.dliu.thang) ? res.dliu.thang : '';
+                    resolve({ nam: nam, thang: thang });
+                }, reject);
             });
         }
+        
+        // === BỔ SUNG: CẬP NHẬT NĂM HỌC VÀO GIAOVIEC ===
+        function capNhatNamHoc(namMoi, thangHienTai) {
+            return new Promise(function(resolve, reject) {
+                var payload = {
+                    nam: namMoi,
+                    thang: thangHienTai,
+                    nviec: null   // không thay đổi nhiệm vụ
+                };
+                callApi('gvxulynviec', { tdtai: payload }, function(res) {
+                    resolve(res);
+                }, reject);
+            });
+        }
+        
+        var currentList = [];
+        var currentThang = '';   // lưu tháng hiện tại để khi cập nhật năm học không làm mất tháng
+        var $ = function(sel) { return document.querySelector(sel); };
+        var $$ = function(sel) { return document.querySelectorAll(sel); };
         
         function showTempError(input, message) {
             input.classList.add('input-error');
@@ -243,7 +283,7 @@
             if (!tbody) return;
             tbody.innerHTML = '';
             if (currentList.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" class="text-center">Chưa có dữ liệu. Nhấn "Thêm mới" để tạo.2%<tr></tr>';
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center">Chưa có dữ liệu. Nhấn "Thêm mới" để tạo.2%</td></tr>';
                 return;
             }
             for (var i = 0; i < currentList.length; i++) {
@@ -266,16 +306,12 @@
                             return;
                         }
                         if (confirm('Bạn có chắc muốn xóa cán bộ "' + idSheet + '"?\n⚠️ Sheet riêng của người này (nếu có) sẽ bị xóa vĩnh viễn!')) {
-                            // Hiển thị trạng thái xóa
                             btnXoa.innerHTML = '<i class="bi bi-hourglass-split"></i>';
                             btnXoa.disabled = true;
                             try {
-                                // Gọi API xóa sheet riêng
                                 await xoaSheetCaNhan(idSheet);
-                                // Sau khi xóa sheet, xóa khỏi danh sách
                                 currentList.splice(idx, 1);
                                 renderTable();
-                                // Tự động lưu lại danh sách mới lên server
                                 await capNhatDanhSach(currentList);
                                 alert('✅ Đã xóa cán bộ và sheet riêng thành công.');
                             } catch (err) {
@@ -419,7 +455,31 @@
             return true;
         }
         
+        // === CẬP NHẬT (LƯU DANH SÁCH QUYỀN + ĐỒNG BỘ NĂM HỌC) ===
         async function luuDuLieu() {
+            // Lấy giá trị năm học từ ô nhập
+            var namHocInput = $('#namHocInput');
+            var namMoi = namHocInput ? namHocInput.value.trim() : '';
+            
+            // Cập nhật năm học vào sheet GIAOVIEC trước
+            if (namMoi !== "") {
+                try {
+                    await capNhatNamHoc(namMoi, currentThang);
+                } catch (err) {
+                    alert('❌ Lỗi cập nhật năm học: ' + err.message + '\nDữ liệu quyền chưa được lưu.');
+                    return;
+                }
+            } else if (namMoi === "" && currentThang) {
+                // Nếu người dùng xóa trống, có thể vẫn cập nhật với chuỗi rỗng (tuỳ logic)
+                try {
+                    await capNhatNamHoc("", currentThang);
+                } catch (err) {
+                    alert('❌ Lỗi cập nhật năm học: ' + err.message);
+                    return;
+                }
+            }
+            
+            // Sau khi năm học được cập nhật, tiến hành lưu danh sách quyền
             if (!validateList()) return;
             var btn = $('#btnCapNhatPQ');
             var originalHtml = btn.innerHTML;
@@ -430,7 +490,7 @@
                 alert('✅ Thành công\nĐã cập nhật dữ liệu quyền vào sheet KHAIBAO.');
                 await taiLaiDuLieu();
             } catch (err) {
-                alert('❌ Lỗi lưu\n' + err.message);
+                alert('❌ Lỗi lưu danh sách quyền: ' + err.message);
             } finally {
                 btn.innerHTML = originalHtml;
                 btn.disabled = false;
@@ -444,19 +504,32 @@
                 renderTable();
             } catch (err) {
                 console.error(err);
-                alert('Lỗi tải dữ liệu: ' + err.message);
+                alert('Lỗi tải dữ liệu quyền: ' + err.message);
                 currentList = [];
                 renderTable();
             }
         }
         
+        async function khoiTaoNamHoc() {
+            try {
+                var data = await layNamHoc();
+                var namInput = $('#namHocInput');
+                if (namInput) namInput.value = data.nam || '';
+                currentThang = data.thang || '';
+            } catch (err) {
+                console.error('Lỗi tải năm học:', err);
+                // Không ảnh hưởng đến chức năng chính
+            }
+        }
+        
         // Khởi tạo
         if (!API_URL) {
-            $('#quyenTableBodyPQ').innerHTML = '<tr><td colspan="6" class="text-danger text-center">Không tìm thấy API. Vui lòng tải lại trang chính.2%</td></tr>';
+            $('#quyenTableBodyPQ').innerHTML = '<td><td colspan="6" class="text-danger text-center">Không tìm thấy API. Vui lòng tải lại trang chính.2%</td></tr>';
             return;
         }
         
-        taiLaiDuLieu();
+        // Chạy đồng thời tải dữ liệu quyền và năm học
+        Promise.all([taiLaiDuLieu(), khoiTaoNamHoc()]).catch(console.error);
         
         var btnThem = $('#btnThemMoiPQ');
         var btnCap = $('#btnCapNhatPQ');
