@@ -29,8 +29,8 @@
       </div>
       <div class="hopLoc">
         <button id="gvNutChth" class="btn btn-danger btn-sm fw-bold nhapTuyChinh" style="color: white; border: none; padding: 4px 10px; display: flex; align-items: center;" onclick="gvXlmChth(this)">Chuyển tháng mới</button>
-        <!-- ĐÃ KHÓA Ô CHỌN NĂM HỌC (disabled) -->
-        <select id="gvLocNam" class="form-select nhapTuyChinh" style="width: 140px;" disabled>
+        <!-- Ô năm học: KHÔNG disabled để người dùng có thể tự chọn nếu dữ liệu từ B2 bị lỗi -->
+        <select id="gvLocNam" class="form-select nhapTuyChinh" style="width: 140px;">
           <option value="2024-2025">2024-2025</option><option value="2025-2026" selected>2025-2026</option><option value="2026-2027">2026-2027</option>
         </select>
         <select id="gvLocThang" class="form-select nhapTuyChinh" style="width: 120px;">
@@ -148,7 +148,18 @@
 
     function gvKhiTaiXong(dl) {
         gvDatTai(false); 
-        if(dl.nam) document.getElementById('gvLocNam').value = dl.nam; 
+        
+        // Xử lý năm học: nếu dl.nam rỗng, hiển thị cảnh báo và giữ nguyên giá trị hiện tại của dropdown
+        let namValue = dl.nam;
+        if (!namValue || namValue.trim() === "") {
+            console.warn("⚠️ Năm học từ backend bị rỗng. Kiểm tra lại KHAIBAO!B2 hoặc GIAOVIEC!C7.");
+            // Không thay đổi value, giữ nguyên lựa chọn hiện tại của dropdown
+            // Hiển thị thông báo nhẹ (không làm phiền)
+            gvTbaoNhanh('cbh', "Không nhận được năm học từ hệ thống. Vui lòng chọn năm thủ công (nếu cần).");
+        } else {
+            document.getElementById('gvLocNam').value = namValue;
+        }
+        
         if(dl.thang) document.getElementById('gvLocThang').value = dl.thang;
         
         const bns = dl.dlbang;
