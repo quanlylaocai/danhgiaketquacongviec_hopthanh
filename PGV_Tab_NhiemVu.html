@@ -42,7 +42,7 @@
          <textarea id="nhapLdoNghi" class="form-control me-3" placeholder="Nhập lý do..." style="height: 30px; min-height: 30px; font-size: 13px; border-radius: 4px; width: 300px; resize: none; overflow: hidden; white-space: pre-wrap; padding: 4px 8px;" oninput="gdang(this)" onfocus="gdang(this)" onblur="cgon(this, '30px')"></textarea>
      </div>
      <div class="d-flex align-items-center justify-content-end gap-2" style="flex: auto;">
-        <!-- Ô chọn giáo viên - hiển thị khi có cột E = (xx) -->
+        <!-- Ô chọn giáo viên - hiển thị khi quyền = xx -->
         <select id="hopChonGv" class="form-select form-select-sm border-primary fw-bold text-primary shadow-sm text-nowrap w-auto" style="display: none; height: 30px; font-size: 12px;" onchange="kiemTraQuyenTruyCap()">
             <option value="">-- Lựa chọn giáo viên --</option>
         </select>
@@ -76,8 +76,9 @@
 
 <script>
 let mbcMo = false;
-let cotETonTai = false;      // = true khi cột E có giá trị (xx)
-let giaTriCotE = "";         // lưu giá trị cột E
+let cotETonTai = false;      // = true khi quyền = xx (có dropdown)
+let giaTriCotE = "";         // lưu giá trị cột E (xx)
+let dsGiaoVien = [];         // danh sách giáo viên để hiển thị dropdown
 
 // Hàm kiểm tra quyền truy cập dựa trên dropdown giáo viên
 function kiemTraQuyenTruyCap() {
@@ -95,9 +96,14 @@ function kiemTraQuyenTruyCap() {
                 hienThongb('chuy', '⚠️ Bạn đang xem nhật ký của giáo viên khác. Chỉ giáo viên đó mới được lưu và nộp báo cáo.');
             }
         } else {
-            // Chưa chọn giáo viên -> cũng khóa (không cho thao tác khi có cột E nhưng chưa chọn)
-            if (nutLuu) nutLuu.disabled = true;
-            if (nutNop) nutNop.disabled = true;
+            // Chưa chọn giáo viên -> mở khóa nếu có quyền (chỉ khi đang xem chính mình)
+            if (window.PGV_IS_SELF && window.PGV_QUYEN === 'xxx') {
+                if (nutLuu) nutLuu.disabled = false;
+                if (nutNop && mbcMo) nutNop.disabled = false;
+            } else {
+                if (nutLuu) nutLuu.disabled = false;
+                if (nutNop && mbcMo) nutNop.disabled = false;
+            }
         }
     } else {
         // Không có cột E, hoạt động bình thường theo quyền
@@ -108,7 +114,7 @@ function kiemTraQuyenTruyCap() {
     }
 }
 
-// Hàm khởi tạo dropdown khi phát hiện cột E = (xx)
+// Hàm khởi tạo dropdown với danh sách giáo viên
 function khoiTaoDropdownGiaoVien(danhSachGiaoVien) {
     var selectGv = document.getElementById("hopChonGv");
     if (!selectGv) return;
@@ -117,8 +123,8 @@ function khoiTaoDropdownGiaoVien(danhSachGiaoVien) {
     if (danhSachGiaoVien && danhSachGiaoVien.length > 0) {
         danhSachGiaoVien.forEach(function(gv) {
             var option = document.createElement("option");
-            option.value = gv.id || gv.ma;
-            option.textContent = gv.ten || gv.hoTen;
+            option.value = gv.id || gv.ma || gv.ttrg;
+            option.textContent = gv.ten || gv.hoTen || gv.tenn;
             selectGv.appendChild(option);
         });
         selectGv.style.display = "inline-block";
@@ -129,19 +135,35 @@ function khoiTaoDropdownGiaoVien(danhSachGiaoVien) {
     }
 }
 
-// Hàm xử lý khi cột E = (xx) - gọi từ ngoài khi có dữ liệu
+// Hàm xử lý khi quyền = xx
 function xuLyCotE(giaTriE, danhSachGiaoVien) {
     cotETonTai = true;
     giaTriCotE = giaTriE;
-    khoiTaoDropdownGiaoVien(danhSachGiaoVien);
+    dsGiaoVien = danhSachGiaoVien || [];
+    khoiTaoDropdownGiaoVien(dsGiaoVien);
     
-    // Vô hiệu hóa nút lưu và nộp báo cáo ngay từ đầu
+    // Vô hiệu hóa nút lưu và nộp báo cáo ban đầu (chưa chọn)
     var nutLuu = document.querySelector('button[onclick="xulyLuuTam()"]');
     var nutNop = document.getElementById("nutNopBcao");
     if (nutLuu) nutLuu.disabled = true;
     if (nutNop) nutNop.disabled = true;
 }
 
+// Tải danh sách giáo viên từ server (nếu cần)
+function taiDanhSachGiaoVien() {
+    if (typeof khachApi !== 'undefined' && typeof khachApi.gvLaydsCanb === 'function') {
+        khachApi.gvLaydsCanb(function(dl) {
+            if (dl && dl.length > 0) {
+                dsGiaoVien = dl;
+                khoiTaoDropdownGiaoVien(dsGiaoVien);
+            }
+        }, function(err) {
+            console.error("Lỗi tải danh sách giáo viên:", err);
+        });
+    }
+}
+
+// ================= CÁC HÀM HIỆN CÓ (GIỮ NGUYÊN) =================
 function gdang(ptu) { ptu.style.height = 'auto'; ptu.style.height = ptu.scrollHeight + 'px'; }
 function cgon(ptu, ccao) { ptu.style.height = ccao; ptu.scrollTop = 0; }
 function maHoaBcao(chu, tepdk) { let q = (chu || "").trim(); if (tepdk && tepdk.length > 0) { tepdk.forEach(t => { q += ` [FILE:${t.tentep}|${t.duongd}]`; }); } return q; }
@@ -193,7 +215,7 @@ function xulyXoaTepDc(chs) {
 }
 
 function xulyLuuTam(ath = false, xltc = null) {
-    // Chặn nếu đang có cột E và đã chọn giáo viên
+    // Chặn nếu đang có quyền xx và đã chọn giáo viên khác
     if (cotETonTai) {
         var selectGv = document.getElementById("hopChonGv");
         if (selectGv && selectGv.style.display !== "none" && selectGv.value && selectGv.value !== "") {
@@ -230,7 +252,7 @@ function xulyLuuTam(ath = false, xltc = null) {
 }
 
 function nopBcaoChinh() {
-    // Chặn nếu đang có cột E và đã chọn giáo viên
+    // Chặn nếu đang có quyền xx và đã chọn giáo viên khác
     if (cotETonTai) {
         var selectGv = document.getElementById("hopChonGv");
         if (selectGv && selectGv.style.display !== "none" && selectGv.value && selectGv.value !== "") {
@@ -307,7 +329,7 @@ function veBangNviec(db) {
 function cdang(ptu) { ptu.style.height = 'auto'; ptu.style.height = (ptu.scrollHeight) + 'px'; }
 
 function addNv() {
-    // Không cho thêm nhiệm vụ nếu đang xem dữ liệu giáo viên khác (cột E và đã chọn)
+    // Không cho thêm nhiệm vụ nếu đang xem dữ liệu giáo viên khác
     if (cotETonTai) {
         var selectGv = document.getElementById("hopChonGv");
         if (selectGv && selectGv.style.display !== "none" && selectGv.value && selectGv.value !== "") {
@@ -318,14 +340,13 @@ function addNv() {
     const bg = $('#bangNviec tbody'); if (bg.find('tr td').length === 1 && bg.find('tr td').attr('colspan') == '7') { bg.empty(); } let sn = bg.find('tr.dongNv').length + 1;
     const showDeleteBtn = window.PGV_CAN_SHOW_DELETE_BUTTON === true;
     let deleteBtnHtml = showDeleteBtn ? `<button class="btn btn-sm btn-danger py-0 px-2" onclick="xoaDongNv(this)" title="Xoá dòng này">✕</button>` : ``;
-    let dg = `<tr class="dongNv" data-deadline="" data-type="" data-is-new="true"><td class="text-center align-middle oStt">${sn}</td><td><textarea class="form-control nhapNdung" oninput="cdang(this)" rows="1" placeholder="Nhập nội dung..."></textarea></td><td class="align-middle"><input type="text" class="form-control form-control-sm nhapHchot text-center" placeholder="dd/mm/yyyy" onchange="cnDong(this)"></td><td class="align-middle"><input type="text" class="form-control form-control-sm nhapTdo text-center" placeholder="Loại tiến độ..." onchange="cnDong(this)"></td><td class="align-middle"><select class="form-select form-select-sm chonKq shadow-sm" onchange="tinhtTdong()" style="border:none; font-size:13px;"><option value="">-- Chọn --</option><option value="Chất lượng đạt yêu cầu">Đạt yêu cầu</option><option value="Chất lượng chưa đạt yêu cầu">Chưa đạt</option></select></td><td class="align-middle"><input type="text" class="form-control form-control-sm nhapNgay shadow-sm text-center" onchange="tinhtTdong()" onkeyup="tinhtTdong()" value="" placeholder="dd/mm/yyyy" style="font-size:13px;"></td><td class="text-center align-middle">${deleteBtnHtml}</td><tr>`; bg.append(dg); tinhtTdong(); if(typeof mokBcao === 'function') mokBcao();
+    let dg = `<tr class="dongNv" data-deadline="" data-type="" data-is-new="true"><td class="text-center align-middle oStt">${sn}</td><td><textarea class="form-control nhapNdung" oninput="cdang(this)" rows="1" placeholder="Nhập nội dung..."></textarea></td><td class="align-middle"><input type="text" class="form-control form-control-sm nhapHchot text-center" placeholder="dd/mm/yyyy" onchange="cnDong(this)"></td><td class="align-middle"><input type="text" class="form-control form-control-sm nhapTdo text-center" placeholder="Loại tiến độ..." onchange="cnDong(this)"></td><td class="align-middle"><select class="form-select form-select-sm chonKq shadow-sm" onchange="tinhtTdong()" style="border:none; font-size:13px;"><option value="">-- Chọn --</option><option value="Chất lượng đạt yêu cầu">Đạt yêu cầu</option><option value="Chất lượng chưa đạt yêu cầu">Chưa đạt</option></select></td><td class="align-middle"><input type="text" class="form-control form-control-sm nhapNgay shadow-sm text-center" onchange="tinhtTdong()" onkeyup="tinhtTdong()" value="" placeholder="dd/mm/yyyy" style="font-size:13px;"></td><td class="text-center align-middle">${deleteBtnHtml}</td></tr>`; bg.append(dg); tinhtTdong(); if(typeof mokBcao === 'function') mokBcao();
 }
 
 function cnDong(ptu) { const dr = $(ptu).closest('tr'); dr.attr('data-deadline', dr.find('.nhapHchot').val() || ""); dr.attr('data-type', dr.find('.nhapTdo').val() || ""); tinhtTdong(); }
 
 function xoaDongNv(nt) {
     if (window.PGV_CAN_SHOW_DELETE_BUTTON !== true) return;
-    // Không cho xóa nếu đang xem dữ liệu giáo viên khác
     if (cotETonTai) {
         var selectGv = document.getElementById("hopChonGv");
         if (selectGv && selectGv.style.display !== "none" && selectGv.value && selectGv.value !== "") {
@@ -338,7 +359,7 @@ function xoaDongNv(nt) {
     else { if (confirm(cbm)) { $(nt).closest('tr').remove(); dlStt(); tinhtTdong(); if(typeof mokBcao === 'function') mokBcao(); } }
 }
 
-function dlStt() { $('#bangNviec tbody tr.dongNv').each(function(chs) { $(this).find('.oStt').text(chs + 1); }); if ($('#bangNviec tbody tr.dongNv').length === 0) { $('#bangNviec tbody').html('<tr><td colspan=\"7\" class=\"text-center text-muted py-3 small\">Chưa có nhiệm vụ.2%2%</td></tr>'); } }
+function dlStt() { $('#bangNviec tbody tr.dongNv').each(function(chs) { $(this).find('.oStt').text(chs + 1); }); if ($('#bangNviec tbody tr.dongNv').length === 0) { $('#bangNviec tbody').html('<table><td colspan=\"7\" class=\"text-center text-muted py-3 small\">Chưa có nhiệm vụ.2%2%</td></tr>'); } }
 
 function tinhtTdong() {
     const dtc = document.getElementById('nhapDiemThuong'); let dc = dtc ? (parseFloat(dtc.value) || 0) : 0;
@@ -371,13 +392,38 @@ function chNgayVN(c) { if (!c || typeof c !== 'string') return null; const sc = 
 function hdNgay(nc) { if (!nc) return ""; let cs = String(nc).trim(); if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(cs)) return cs; if (cs.length >= 10 && cs.charAt(4) === '-') { let px = cs.substring(0, 10).split('-'); if(px.length === 3) return px[2] + '/' + px[1] + '/' + px[0]; } let cl = cs.replace(/\(.*?\)/g, '').trim(); let dt = new Date(cl); if (!isNaN(dt.getTime())) { let ng = dt.getDate(), th = dt.getMonth() + 1, na = dt.getFullYear(); return (ng < 10 ? '0' + ng : ng) + '/' + (th < 10 ? '0' + th : th) + '/' + na; } return nc; }
 function capnhTdong() { tinhtTdong(); }
 
-// Khởi tạo: khi dữ liệu từ server có cột E = "xx", gọi hàm xuLyCotE()
-// Ví dụ:
-// $(document).ready(function() {
-//     var dsGiaoVien = [
-//         { id: "GV01", ten: "Nguyễn Văn A" },
-//         { id: "GV02", ten: "Trần Thị B" }
-//     ];
-//     xuLyCotE("xx", dsGiaoVien);
-// });
+// ================= KHỞI TẠO KHI CÓ DỮ LIỆU =================
+// Hàm này sẽ được gọi sau khi canbHientai được load (ví dụ trong taiDlBdau)
+function khoiTaoTheoQuyen() {
+    if (typeof canbHientai !== 'undefined' && canbHientai.quyen === 'xx') {
+        // Lấy danh sách giáo viên từ API (nếu chưa có)
+        if (typeof khachApi !== 'undefined' && typeof khachApi.gvLaydsCanb === 'function') {
+            khachApi.gvLaydsCanb(function(dl) {
+                xuLyCotE('xx', dl);
+            }, function(err) {
+                console.error("Không thể tải danh sách giáo viên:", err);
+                xuLyCotE('xx', []); // vẫn hiển thị dropdown rỗng
+            });
+        } else {
+            xuLyCotE('xx', []);
+        }
+    } else {
+        // Nếu quyền khác, đảm bảo dropdown ẩn và nút hoạt động bình thường
+        cotETonTai = false;
+        document.getElementById("hopChonGv").style.display = 'none';
+        // Cho phép nút lưu và nộp báo cáo (nếu có quyền)
+        var nutLuu = document.querySelector('button[onclick="xulyLuuTam()"]');
+        var nutNop = document.getElementById("nutNopBcao");
+        if (window.PGV_IS_SELF && window.PGV_QUYEN === 'xxx') {
+            if (nutLuu) nutLuu.disabled = false;
+            if (nutNop && mbcMo) nutNop.disabled = false;
+        }
+    }
+}
+
+// Gọi khởi tạo sau khi trang load và canbHientai đã sẵn sàng
+$(document).ready(function() {
+    // Chờ một chút để canbHientai có thể được set từ file khác
+    setTimeout(khoiTaoTheoQuyen, 500);
+});
 </script>
