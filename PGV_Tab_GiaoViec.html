@@ -29,10 +29,7 @@
       </div>
       <div class="hopLoc">
         <button id="gvNutChth" class="btn btn-danger btn-sm fw-bold nhapTuyChinh" style="color: white; border: none; padding: 4px 10px; display: flex; align-items: center;" onclick="gvXlmChth(this)">Chuyển tháng mới</button>
-        <!-- Ô năm học bị khóa, không có option cứng -->
         <input type="text" id="gvLocNam" class="form-control nhapTuyChinh" style="width: 140px; background-color: #ffffff;" disabled placeholder="Năm học">
-          <!-- Các option sẽ được tạo động từ dữ liệu -->
-        </select>
         <select id="gvLocThang" class="form-select nhapTuyChinh" style="width: 120px;">
           <option value="Tháng 1">Tháng 1</option><option value="Tháng 2">Tháng 2</option><option value="Tháng 3">Tháng 3</option><option value="Tháng 4">Tháng 4</option>
           <option value="Tháng 5">Tháng 5</option><option value="Tháng 6">Tháng 6</option><option value="Tháng 7">Tháng 7</option><option value="Tháng 8">Tháng 8</option>
@@ -153,26 +150,15 @@
         let namValue = dl.nam;
         console.log("[DEBUG] Năm học từ backend (C7):", namValue);
         
-        const selectNam = document.getElementById('gvLocNam');
-        // Xóa tất cả các option hiện tại
-        selectNam.innerHTML = '';
-        
-        if (namValue && namValue.trim() !== "") {
-            // Thêm option mới với giá trị nhận được
-            let option = document.createElement('option');
-            option.value = namValue;
-            option.text = namValue;
-            selectNam.appendChild(option);
-            selectNam.disabled = true; // vẫn disabled
-        } else {
-            // Nếu C7 trống, thêm option rỗng hoặc thông báo
-            let option = document.createElement('option');
-            option.value = "";
-            option.text = "---";
-            selectNam.appendChild(option);
-            console.warn("⚠️ Ô C7 sheet GIAOVIEC đang trống! Vui lòng nhập năm học vào ô C7.");
-            gvTbaoNhanh('cbh', "Ô C7 sheet GIAOVIEC chưa có dữ liệu năm học. Vui lòng nhập năm học (ví dụ: 2025-2026) vào ô đó.");
-        }
+        const inputNam = document.getElementById('gvLocNam');
+          if (namValue && namValue.trim() !== "") {
+              inputNam.value = namValue;
+          } else {
+              inputNam.value = "";
+              console.warn("⚠️ Ô C7 sheet GIAOVIEC đang trống! Vui lòng nhập năm học vào ô C7.");
+              gvTbaoNhanh('cbh', "Ô C7 sheet GIAOVIEC chưa có dữ liệu năm học. Vui lòng nhập năm học (ví dụ: 2025-2026) vào ô đó.");
+          }
+          inputNam.disabled = true;
         
         if(dl.thang) document.getElementById('gvLocThang').value = dl.thang;
         
