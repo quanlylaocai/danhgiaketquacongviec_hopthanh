@@ -174,8 +174,7 @@
             API_URL = ddungApi;
             getToken = function() { return (typeof PGV_TOKEN !== 'undefined') ? PGV_TOKEN : ''; };
         }
-        
-        function callApi(action, data, onSuccess, onError) {
+  function callApi(action, data, onSuccess, onError) {
             if (!API_URL) {
                 if (onError) onError(new Error("Không tìm thấy API"));
                 return;
